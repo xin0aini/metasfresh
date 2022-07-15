@@ -6,7 +6,10 @@ import de.metas.adempiere.model.I_C_InvoiceLine;
 import de.metas.adempiere.model.I_C_Order;
 import de.metas.bpartner.BPartnerId;
 import de.metas.bpartner.service.BPartnerInfo;
+import de.metas.document.DocBaseAndSubType;
 import de.metas.document.DocTypeId;
+import de.metas.document.DocTypeQuery;
+import de.metas.document.IDocTypeBL;
 import de.metas.document.IDocTypeDAO;
 import de.metas.document.dimension.Dimension;
 import de.metas.document.dimension.DimensionService;
@@ -42,6 +45,7 @@ import de.metas.invoicecandidate.model.I_C_Invoice_Candidate;
 import de.metas.lang.ExternalIdsUtil;
 import de.metas.logging.TableRecordMDC;
 import de.metas.order.IOrderDAO;
+import de.metas.order.OrderId;
 import de.metas.order.OrderLineId;
 import de.metas.organization.IOrgDAO;
 import de.metas.payment.paymentterm.PaymentTermId;
@@ -126,6 +130,7 @@ public class InvoiceCandBLCreateInvoices implements IInvoiceGenerator
 	private static final transient Logger logger = InvoiceCandidate_Constants.getLogger(InvoiceCandBLCreateInvoices.class);
 
 	private final transient IOrgDAO orgDAO = Services.get(IOrgDAO.class);
+	private final transient IDocTypeBL docTypeBL = Services.get(IDocTypeBL.class);	
 	private final transient IDocTypeDAO docTypeDAO = Services.get(IDocTypeDAO.class);
 	private final transient IInvoiceCandBL invoiceCandBL = Services.get(IInvoiceCandBL.class);
 	private final transient IInvoiceCandDAO invoiceCandDAO = Services.get(IInvoiceCandDAO.class);
@@ -330,7 +335,7 @@ public class InvoiceCandBLCreateInvoices implements IInvoiceGenerator
 			// => start creating the invoice from Order
 			if (createInvoiceFromOrder && invoiceHeader.getC_Order_ID() > 0)
 			{
-				final I_C_Order order = create(ctx, invoiceHeader.getC_Order_ID(), I_C_Order.class, trxName);
+				final org.compiere.model.I_C_Order order = orderDAO.getById(OrderId.ofRepoId(invoiceHeader.getC_Order_ID()));
 
 				final DocTypeId invoiceDocTypeId = invoiceHeader.getC_DocTypeInvoice() != null
 						? DocTypeId.ofRepoId(invoiceHeader.getC_DocTypeInvoice().getC_DocType_ID())
@@ -464,20 +469,23 @@ public class InvoiceCandBLCreateInvoices implements IInvoiceGenerator
 
 	private void setC_DocType(final I_C_Invoice invoice, @NonNull final IInvoiceHeader invoiceHeader)
 	{
-		final InvoiceDocBaseType invoiceHeaderDocBaseType = invoiceHeader.getDocBaseType();
+		//final InvoiceDocBaseType invoiceHeaderDocBaseType = invoiceHeader.getDocBaseType();
 
+		final DocBaseAndSubType invoiceHeaderDocType = invoiceHeader.getC_DocTypeInvoice();
 		if (invoice.getC_DocTypeTarget_ID() <= 0)
 		{
-			final I_C_DocType invoiceHeaderDocType = invoiceHeader.getC_DocTypeInvoice();
-			if (invoiceHeaderDocType != null)
-			{
-				invoiceBL.setDocTypeTargetIdAndUpdateDescription(invoice, invoiceHeaderDocType.getC_DocType_ID());
-				invoice.setIsSOTrx(invoiceHeaderDocType.isSOTrx());
-			}
-			else
-			{
-				invoiceBL.setDocTypeTargetId(invoice, invoiceHeaderDocBaseType);
-			}
+			// if (invoiceHeaderDocType != null)
+			// {
+			final DocTypeId docTypeId = docTypeDAO.getDocTypeId(DocTypeQuery.of(invoiceHeaderDocType, invoiceHeader.getOrgId()));
+			final boolean soTrx = docTypeBL.isSOTrx(invoiceHeaderDocType.getDocBaseType());
+			
+			invoiceBL.setDocTypeTargetIdAndUpdateDescription(invoice, DocTypeId.toRepoId(docTypeId));
+			invoice.setIsSOTrx(soTrx);
+			// }
+			// else
+			// {
+			// 	invoiceBL.setDocTypeTargetId(invoice, invoiceHeaderDocBaseType);
+			// }
 		}
 
 		//
@@ -488,7 +496,8 @@ public class InvoiceCandBLCreateInvoices implements IInvoiceGenerator
 		// and the invoice document type is fetched from order's document type
 		// and that document type is not a credit memo.
 		{
-			final boolean invoiceHeader_IsCreditMemo = invoiceHeaderDocBaseType != null && invoiceHeaderDocBaseType.isCreditMemo();
+			final InvoiceDocBaseType invoiceHeaderDocBaseType = InvoiceDocBaseType.ofCode(invoiceHeaderDocType.getDocBaseType());
+			final boolean invoiceHeader_IsCreditMemo = invoiceHeaderDocBaseType.isCreditMemo();
 			final I_C_DocType invoiceDocType = docTypeDAO.getById(invoice.getC_DocTypeTarget_ID());
 			Check.assumeNotNull(invoiceDocType, "invoiceDocType not null"); // shall not happen
 			final InvoiceDocBaseType invoiceDocBaseType = InvoiceDocBaseType.ofCode(invoiceDocType.getDocBaseType());

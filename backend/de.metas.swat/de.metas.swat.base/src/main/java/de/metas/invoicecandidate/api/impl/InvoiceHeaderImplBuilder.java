@@ -3,6 +3,8 @@ package de.metas.invoicecandidate.api.impl;
 import de.metas.bpartner.BPartnerContactId;
 import de.metas.bpartner.BPartnerId;
 import de.metas.bpartner.service.BPartnerInfo;
+import de.metas.document.DocBaseAndSubType;
+import de.metas.document.DocTypeId;
 import de.metas.money.CurrencyId;
 import de.metas.organization.OrgId;
 import de.metas.pricing.service.IPriceListDAO;
@@ -30,7 +32,7 @@ import java.util.Set;
  */
 public class InvoiceHeaderImplBuilder
 {
-	private I_C_DocType docTypeInvoice = null;
+	private DocTypeId docTypeInvoice = null;
 
 	private final Set<String> POReferences = new HashSet<>();
 
@@ -129,12 +131,12 @@ public class InvoiceHeaderImplBuilder
 		C_Async_Batch_ID = checkOverrideID("C_Async_Batch_ID", C_Async_Batch_ID, asyncBatchId);
 	}
 
-	public I_C_DocType getC_DocTypeInvoice()
+	public DocTypeId getC_DocTypeInvoice()
 	{
 		return docTypeInvoice;
 	}
 
-	public void setC_DocTypeInvoice(final I_C_DocType docTypeInvoice)
+	public void setDocTypeInvoiceId(final DocTypeId docTypeId)
 	{
 		this.docTypeInvoice = checkOverrideModel("DocTypeInvoice", this.docTypeInvoice, docTypeInvoice);
 	}
@@ -360,6 +362,9 @@ public class InvoiceHeaderImplBuilder
 		}
 	}
 
+	/**
+	 * Throw exception if {@code id} and {@code idNew} are at odds with each other. 
+	 */
 	private static int checkOverrideID(final String name, final int id, final int idNew)
 	{
 		if (id <= 0)
@@ -382,7 +387,7 @@ public class InvoiceHeaderImplBuilder
 		}
 	}
 
-	private static <T> T checkOverrideModel(final String name, final T model, final T modelNew)
+	private static <T> T checkOverrideModel(@NonNull final String name, @Nullable final T model, @Nullable final T modelNew)
 	{
 		if (model == null)
 		{

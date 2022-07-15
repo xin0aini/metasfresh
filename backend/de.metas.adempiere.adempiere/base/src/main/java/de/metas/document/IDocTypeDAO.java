@@ -47,7 +47,8 @@ public interface IDocTypeDAO extends ISingletonService
 	 */
 	DocTypeId getDocTypeIdOrNull(final DocTypeQuery query);
 
-	DocTypeId getDocTypeId(DocTypeQuery query) throws DocTypeNotFoundException;
+	@NonNull
+	DocTypeId getDocTypeId(@NonNull DocTypeQuery query) throws DocTypeNotFoundException;
 
 	Optional<I_C_DocType> retrieveDocType(DocTypeQuery docTypeQuery);
 

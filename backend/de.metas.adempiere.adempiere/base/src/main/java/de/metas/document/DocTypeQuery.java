@@ -1,5 +1,6 @@
 package de.metas.document;
 
+import de.metas.organization.OrgId;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.NonNull;
@@ -37,6 +38,15 @@ public class DocTypeQuery
 	public static final String DOCSUBTYPE_Any = "DOCSUBTYPE_Any";
 	public static final String DOCSUBTYPE_NONE = null;
 
+	public static DocTypeQuery of(@NonNull final DocBaseAndSubType docBaseAndSubType, @Nullable final OrgId orgId)
+	{
+		return DocTypeQuery.builder()
+				.adOrgId(OrgId.toRepoIdOrAny(orgId))
+				.docBaseType(docBaseAndSubType.getDocBaseType())
+				.docSubType(docBaseAndSubType.getDocSubType())
+				.build();
+	}
+	
 	@NonNull
 	String docBaseType;
 

@@ -3,6 +3,7 @@ package de.metas.invoicecandidate.api.impl;
 import java.time.LocalDate;
 import java.util.List;
 
+import de.metas.document.DocBaseAndSubType;
 import de.metas.invoice.InvoiceDocBaseType;
 import de.metas.bpartner.service.BPartnerInfo;
 import de.metas.payment.paymentterm.PaymentTermId;
@@ -34,7 +35,7 @@ import javax.annotation.Nullable;
 
 	private List<IInvoiceCandAggregate> lines;
 
-	private InvoiceDocBaseType docBaseType;
+	//private InvoiceDocBaseType docBaseType;
 
 	private String poReference;
 
@@ -72,7 +73,8 @@ import javax.annotation.Nullable;
 	// 06630
 	private int M_InOut_ID = -1;
 
-	private I_C_DocType docTypeInvoice;
+	//private I_C_DocType docTypeInvoice;
+	private DocBaseAndSubType docTypeInvoice;
 
 	private boolean taxIncluded;
 	private String  externalId;
@@ -89,7 +91,7 @@ import javax.annotation.Nullable;
 	public String toString()
 	{
 		return "InvoiceHeaderImpl ["
-				+ "docBaseType=" + docBaseType
+				//+ "docBaseType=" + docBaseType
 				+ ", dateInvoiced=" + dateInvoiced
 				+ ", AD_Org_ID=" + OrgId.toRepoId(orgId)
 				+ ", M_PriceList_ID=" + M_PriceList_ID
@@ -118,11 +120,11 @@ import javax.annotation.Nullable;
 				.collect(ImmutableList.toImmutableList());
 	}
 
-	@Override
-	public InvoiceDocBaseType getDocBaseType()
-	{
-		return docBaseType;
-	}
+	// @Override
+	// public InvoiceDocBaseType getDocBaseType()
+	// {
+	// 	return docBaseType;
+	// }
 
 	@Override
 	public String getPOReference()
@@ -159,10 +161,10 @@ import javax.annotation.Nullable;
 		this.lines = lines;
 	}
 
-	public void setDocBaseType(final InvoiceDocBaseType docBaseType)
-	{
-		this.docBaseType = docBaseType;
-	}
+	// public void setDocBaseType(final InvoiceDocBaseType docBaseType)
+	// {
+	// 	this.docBaseType = docBaseType;
+	// }
 
 	public void setPOReference(final String poReference)
 	{
@@ -234,12 +236,12 @@ import javax.annotation.Nullable;
 	}
 
 	@Override
-	public I_C_DocType getC_DocTypeInvoice()
+	public DocBaseAndSubType getC_DocTypeInvoice()
 	{
 		return docTypeInvoice;
 	}
 
-	public void setC_DocTypeInvoice(final I_C_DocType docType)
+	public void setC_DocTypeInvoice(final DocBaseAndSubType docType)
 	{
 		this.docTypeInvoice = docType;
 	}

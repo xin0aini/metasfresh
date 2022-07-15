@@ -122,11 +122,11 @@ public final class DocTypeSequenceMap
 	}
 
 	@Value
-	private static final class DocTypeSequence
+	private static class DocTypeSequence
 	{
-		private final ClientId adClientId;
-		private final OrgId adOrgId;
-		private final DocSequenceId docSequenceId;
+		ClientId adClientId;
+		OrgId adOrgId;
+		DocSequenceId docSequenceId;
 
 		private DocTypeSequence(
 				@Nullable final ClientId adClientId,

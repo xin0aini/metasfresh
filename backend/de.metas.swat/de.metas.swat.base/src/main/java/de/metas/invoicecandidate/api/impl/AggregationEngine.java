@@ -435,6 +435,7 @@ public final class AggregationEngine
 			if (icRecord.getC_DocTypeInvoice_ID() > 0)
 			{
 				final I_C_DocType docTypeInvoice = docTypeDAO.getById(icRecord.getC_DocTypeInvoice_ID());
+				
 				invoiceHeader.setC_DocTypeInvoice(docTypeInvoice);
 			}
 
@@ -649,12 +650,12 @@ public final class AggregationEngine
 		final I_C_DocType invoiceDocType = invoiceHeader.getC_DocTypeInvoice();
 		final Money totalAmt = invoiceHeader.calculateTotalNetAmtFromLines();
 
-		final InvoiceDocBaseType docBaseType;
+		//final InvoiceDocBaseType docBaseType;
 
 		//
 		// Case: Invoice DocType was preset
-		if (invoiceHeader.getC_DocTypeInvoice() != null)
-		{
+		// if (invoiceHeader.getC_DocTypeInvoice() != null)
+		// {
 			Check.assume(invoiceIsSOTrx == invoiceDocType.isSOTrx(), "InvoiceHeader's IsSOTrx={} shall match document type {}", invoiceIsSOTrx, invoiceDocType);
 
 			final InvoiceDocBaseType invoiceDocBaseType = InvoiceDocBaseType.ofCode(invoiceDocType.getDocBaseType());
@@ -668,37 +669,37 @@ public final class AggregationEngine
 			{
 				docBaseType = invoiceDocBaseType;
 			}
-		}
-		//
-		// Case: no invoice DocType was set
-		// We need to find out the DocBaseType based on Total Amount and IsSOTrx
-		else
-		{
-			if (invoiceIsSOTrx)
-			{
-				if (totalAmt.signum() < 0)
-				{
-					// AR Credit Memo Invoice (sales)
-					docBaseType = InvoiceDocBaseType.CustomerCreditMemo;
-				}
-				else
-				{
-					// Regular AR Invoice (sales)
-					docBaseType = InvoiceDocBaseType.CustomerInvoice;
-				}
-			}
-			else
-			{
-				if (totalAmt.signum() < 0)
-				{
-					docBaseType = InvoiceDocBaseType.VendorCreditMemo;
-				}
-				else
-				{
-					docBaseType = InvoiceDocBaseType.VendorInvoice;
-				}
-			}
-		}
+		// }
+		// //
+		// // Case: no invoice DocType was set
+		// // We need to find out the DocBaseType based on Total Amount and IsSOTrx
+		// else
+		// {
+		// 	if (invoiceIsSOTrx)
+		// 	{
+		// 		if (totalAmt.signum() < 0)
+		// 		{
+		// 			// AR Credit Memo Invoice (sales)
+		// 			docBaseType = InvoiceDocBaseType.CustomerCreditMemo;
+		// 		}
+		// 		else
+		// 		{
+		// 			// Regular AR Invoice (sales)
+		// 			docBaseType = InvoiceDocBaseType.CustomerInvoice;
+		// 		}
+		// 	}
+		// 	else
+		// 	{
+		// 		if (totalAmt.signum() < 0)
+		// 		{
+		// 			docBaseType = InvoiceDocBaseType.VendorCreditMemo;
+		// 		}
+		// 		else
+		// 		{
+		// 			docBaseType = InvoiceDocBaseType.VendorInvoice;
+		// 		}
+		// 	}
+		// }
 
 		//
 		// NOTE: in credit memos, amount are positive but the invoice effect is reversed
@@ -707,7 +708,7 @@ public final class AggregationEngine
 			invoiceHeader.negateAllLineAmounts();
 		}
 
-		invoiceHeader.setDocBaseType(docBaseType);
+		//invoiceHeader.setDocBaseType(docBaseType);
 		invoiceHeader.setPaymentTermId(getPaymentTermId(invoiceHeader).orElse(null));
 	}
 

@@ -3,7 +3,9 @@ package de.metas.invoicecandidate.api;
 import java.time.LocalDate;
 import java.util.List;
 
+import de.metas.document.DocBaseAndSubType;
 import de.metas.invoice.InvoiceDocBaseType;
+import lombok.NonNull;
 import org.compiere.model.I_C_DocType;
 
 import de.metas.bpartner.BPartnerId;
@@ -20,7 +22,7 @@ import java.util.List;
 
 public interface IInvoiceHeader
 {
-	InvoiceDocBaseType getDocBaseType();
+	// InvoiceDocBaseType getDocBaseType();
 
 	String getPOReference();
 
@@ -63,7 +65,8 @@ public interface IInvoiceHeader
 
 	int getM_InOut_ID();
 
-	I_C_DocType getC_DocTypeInvoice();
+	@NonNull 
+	DocBaseAndSubType getC_DocTypeInvoice();
 
 	boolean isTaxIncluded();
 

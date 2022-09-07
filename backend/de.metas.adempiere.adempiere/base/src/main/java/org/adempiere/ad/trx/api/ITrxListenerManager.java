@@ -7,6 +7,7 @@ import com.google.common.base.MoreObjects.ToStringHelper;
 
 import lombok.Getter;
 import lombok.NonNull;
+import org.adempiere.ad.trx.api.impl.AutoCommitTrxListenerManager;
 
 /**
  * Transactions Listeners Mananger.<br>
@@ -132,7 +133,14 @@ public interface ITrxListenerManager
 		public void registerHandlingMethod(@NonNull final EventHandlingMethod handlingMethod)
 		{
 			this.handlingMethod = handlingMethod;
-			parent.registerListener(this);
+			if (!parent.canRegisterOnTiming(this.getTiming()))
+			{
+				AutoCommitTrxListenerManager.instance.registerListener(this);
+			}
+			else
+			{
+				parent.registerListener(this);
+			}
 		}
 
 		@Override

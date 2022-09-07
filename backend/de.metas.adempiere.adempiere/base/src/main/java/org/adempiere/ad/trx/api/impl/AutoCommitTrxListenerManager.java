@@ -34,7 +34,7 @@ import lombok.NonNull;
  * @author tsa
  *
  */
-/* package */final class AutoCommitTrxListenerManager implements ITrxListenerManager
+/* package */public final class AutoCommitTrxListenerManager implements ITrxListenerManager
 {
 	public static final transient AutoCommitTrxListenerManager instance = new AutoCommitTrxListenerManager();
 

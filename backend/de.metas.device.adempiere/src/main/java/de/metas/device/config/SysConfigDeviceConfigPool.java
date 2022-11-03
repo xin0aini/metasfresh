@@ -146,6 +146,7 @@ public class SysConfigDeviceConfigPool implements IDeviceConfigPool
 				.peek(deviceName -> logger.info("loading config for device: {}", deviceName))
 				.map(this::createDeviceConfigOrNull)
 				.filter(Objects::nonNull)
+				.peek(deviceConfig -> logger.info("assigning device {} to attributeCoodes {}", deviceConfig.getDeviceName(), deviceConfig.getAssignedAttributeCodes()))
 				.flatMap(deviceConfig -> deviceConfig.getAssignedAttributeCodes()
 						.stream()
 						.peek(attributeCode -> logger.info("assigning AttributeCode {} to device {}", attributeCode, deviceConfig.getDeviceName()))

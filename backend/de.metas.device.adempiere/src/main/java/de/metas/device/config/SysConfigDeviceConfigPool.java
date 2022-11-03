@@ -143,10 +143,12 @@ public class SysConfigDeviceConfigPool implements IDeviceConfigPool
 	{
 		return getAllDeviceNames()
 				.stream()
+				.peek(deviceName -> logger.info("loading config for device: {}", deviceName))
 				.map(this::createDeviceConfigOrNull)
 				.filter(Objects::nonNull)
 				.flatMap(deviceConfig -> deviceConfig.getAssignedAttributeCodes()
 						.stream()
+						.peek(attributeCode -> logger.info("assigning AttributeCode {} to device {}", attributeCode, deviceConfig.getDeviceName()))
 						.map(attributeCode -> GuavaCollectors.entry(attributeCode, deviceConfig)))
 				.collect(GuavaCollectors.toImmutableListMultimap());
 	}
@@ -206,6 +208,7 @@ public class SysConfigDeviceConfigPool implements IDeviceConfigPool
 				return true;
 			}
 		}
+		logger.info("Device {} not available for hostname {}", deviceName, hostName);
 
 		return false;
 	}

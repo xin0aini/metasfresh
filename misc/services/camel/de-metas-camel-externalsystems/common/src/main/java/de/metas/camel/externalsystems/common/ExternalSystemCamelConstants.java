@@ -43,6 +43,8 @@ public class ExternalSystemCamelConstants
 	public static final String HEADER_HU_ID = "M_HU_ID";
 	public static final String HEADER_PP_ORDER_ID = "PP_ORDER_ID";
 	public static final String HEADER_PRODUCT_IDENTIFIER = "productIdentifier";
+	public static final String HEADER_PROJECT_ID = "projectId";
+	public static final String HEADER_BASE_URL = "BaseURL";
 
 	public static final String MF_UPSERT_BPARTNER_CAMEL_URI = "metasfresh.upsert-bpartner.camel.uri";
 
@@ -132,10 +134,15 @@ public class ExternalSystemCamelConstants
 	public static final String MF_UPSERT_PROJECT_V2_CAMEL_URI = "metasfresh.upsert-project-v2.camel.uri";
 
 	public static final String MF_UPSERT_WORK_ORDER_PROJECT_V2_ROUTE_ID = "To-MF_UpsertWorkOrderProjects-Route";
-	public static final String MF_GET_WORK_ORDER_PROJECT_V2_ROUTE_ID = "To-MF_GetWorkOrderProjects-Route";
+	public static final String MF_GET_WORK_ORDER_PROJECT_BY_QUERY_V2_ROUTE_ID = "To-MF_GetWorkOrderProjectsByQuery-Route";
 	public static final String MF_UPSERT_WORK_ORDER_PROJECT_V2_CAMEL_URI = "metasfresh.upsert-workorder-project-v2.camel.uri";
-	public static final String MF_GET_WORK_ORDER_PROJECT_V2_CAMEL_URI = "metasfresh.get-workorder-project-v2.camel.uri";
+	public static final String MF_GET_WORK_ORDER_PROJECT_BY_QUERY_V2_CAMEL_URI = "metasfresh.get-workorder-project-by-query-v2.camel.uri";
 
 	public static final String MF_UPSERT_BUDGET_PROJECT_V2_ROUTE_ID = "To-MF_UpsertBudgetProjects-Route";
 	public static final String MF_UPSERT_BUDGET_PROJECT_V2_CAMEL_URI = "metasfresh.upsert-budget-project-v2.camel.uri";
+
+	public static final String MF_GET_WORK_ORDER_PROJECT_V2_ROUTE_ID = "To-MF_GetWorkOrderProjects-Route";
+	public static final String MF_GET_WORK_ORDER_PROJECT_V2_CAMEL_URI = "metasfresh.project-v2-baseurl.camel.uri";
+
+	public static final String RAA_EXPORT_WO_STEP_ROUTE_ID = "To-RAA_Export_WO_Step-Route";
 }

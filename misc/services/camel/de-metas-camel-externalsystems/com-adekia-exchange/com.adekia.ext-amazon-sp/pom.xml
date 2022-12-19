@@ -235,10 +235,8 @@
             <groupId>com.amazon.sellingpartnerapi</groupId>
             <artifactId>sellingpartnerapi-aa-java</artifactId>
             <version>1.0</version>
-<!--
             <scope>system</scope>
             <systemPath>${basedir}/lib/sellingpartnerapi-aa-java-1.0-jar-with-dependencies.jar</systemPath>
--->
         </dependency>
         <!-- test dependencies
         <dependency>

@@ -40,6 +40,7 @@ public class ExternalSystems
 		registerExternalSystem(OtherExternalSystem.OTHER);
 		registerExternalSystem(WoocommerceExternalSystem.WOOCOMMERCE);
 		registerExternalSystem(GRSSignumExternalSystem.GRSSIGNUM);
+		registerExternalSystem(AmazonExternalSystem.AMAZON);
 	}
 
 	private final Map<String, IExternalSystem> systemsByCode = new HashMap<>();

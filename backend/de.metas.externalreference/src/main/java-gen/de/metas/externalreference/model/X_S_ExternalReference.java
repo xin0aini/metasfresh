@@ -41,7 +41,7 @@ public class X_S_ExternalReference extends org.compiere.model.PO implements I_S_
 	}
 
 	@Override
-	public java.lang.String getExternalReference() 
+	public java.lang.String getExternalReference()
 	{
 		return get_ValueAsString(COLUMNNAME_ExternalReference);
 	}
@@ -53,7 +53,7 @@ public class X_S_ExternalReference extends org.compiere.model.PO implements I_S_
 	}
 
 	@Override
-	public java.lang.String getExternalReferenceURL() 
+	public java.lang.String getExternalReferenceURL()
 	{
 		return get_ValueAsString(COLUMNNAME_ExternalReferenceURL);
 	}
@@ -77,6 +77,8 @@ public class X_S_ExternalReference extends org.compiere.model.PO implements I_S_
 	public static final String EXTERNALSYSTEM_WooCommerce = "WooCommerce";
 	/** GRSSignum = GRSSignum */
 	public static final String EXTERNALSYSTEM_GRSSignum = "GRSSignum";
+	/** Amazon = Amazon */
+	public static final String EXTERNALSYSTEM_Amazon = "Amazon";
 	@Override
 	public void setExternalSystem (final java.lang.String ExternalSystem)
 	{
@@ -84,7 +86,7 @@ public class X_S_ExternalReference extends org.compiere.model.PO implements I_S_
 	}
 
 	@Override
-	public java.lang.String getExternalSystem() 
+	public java.lang.String getExternalSystem()
 	{
 		return get_ValueAsString(COLUMNNAME_ExternalSystem);
 	}
@@ -189,7 +191,7 @@ public class X_S_ExternalReference extends org.compiere.model.PO implements I_S_
 	}
 
 	@Override
-	public java.lang.String getType() 
+	public java.lang.String getType()
 	{
 		return get_ValueAsString(COLUMNNAME_Type);
 	}
@@ -201,7 +203,7 @@ public class X_S_ExternalReference extends org.compiere.model.PO implements I_S_
 	}
 
 	@Override
-	public java.lang.String getVersion() 
+	public java.lang.String getVersion()
 	{
 		return get_ValueAsString(COLUMNNAME_Version);
 	}

@@ -41,7 +41,7 @@ public class X_ExternalSystem_Config extends org.compiere.model.PO implements I_
 	}
 
 	@Override
-	public java.lang.String getAuditFileFolder() 
+	public java.lang.String getAuditFileFolder()
 	{
 		return get_ValueAsString(COLUMNNAME_AuditFileFolder);
 	}
@@ -53,7 +53,7 @@ public class X_ExternalSystem_Config extends org.compiere.model.PO implements I_
 	}
 
 	@Override
-	public java.lang.String getDescription() 
+	public java.lang.String getDescription()
 	{
 		return get_ValueAsString(COLUMNNAME_Description);
 	}
@@ -80,7 +80,7 @@ public class X_ExternalSystem_Config extends org.compiere.model.PO implements I_
 	}
 
 	@Override
-	public java.lang.String getName() 
+	public java.lang.String getName()
 	{
 		return get_ValueAsString(COLUMNNAME_Name);
 	}
@@ -102,6 +102,9 @@ public class X_ExternalSystem_Config extends org.compiere.model.PO implements I_
 	public static final String TYPE_GRSSignum = "GRS";
 	/** RabbitMQ REST API = RabbitMQ */
 	public static final String TYPE_RabbitMQRESTAPI = "RabbitMQ";
+	/** Amazon = AMZ */
+	public static final String TYPE_Amazon = "AMZ";
+
 	@Override
 	public void setType (final java.lang.String Type)
 	{
@@ -109,7 +112,7 @@ public class X_ExternalSystem_Config extends org.compiere.model.PO implements I_
 	}
 
 	@Override
-	public java.lang.String getType() 
+	public java.lang.String getType()
 	{
 		return get_ValueAsString(COLUMNNAME_Type);
 	}

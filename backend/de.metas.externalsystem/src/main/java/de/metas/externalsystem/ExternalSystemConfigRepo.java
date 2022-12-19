@@ -28,10 +28,13 @@ import de.metas.common.util.EmptyUtil;
 import de.metas.common.util.StringUtils;
 import de.metas.externalsystem.alberta.ExternalSystemAlbertaConfig;
 import de.metas.externalsystem.alberta.ExternalSystemAlbertaConfigId;
+import de.metas.externalsystem.amazon.ExternalSystemAmazonConfig;
+import de.metas.externalsystem.amazon.ExternalSystemAmazonConfigId;
 import de.metas.externalsystem.grssignum.ExternalSystemGRSSignumConfig;
 import de.metas.externalsystem.grssignum.ExternalSystemGRSSignumConfigId;
 import de.metas.externalsystem.model.I_ExternalSystem_Config;
 import de.metas.externalsystem.model.I_ExternalSystem_Config_Alberta;
+import de.metas.externalsystem.model.I_ExternalSystem_Config_Amazon;
 import de.metas.externalsystem.model.I_ExternalSystem_Config_GRSSignum;
 import de.metas.externalsystem.model.I_ExternalSystem_Config_RabbitMQ_HTTP;
 import de.metas.externalsystem.model.I_ExternalSystem_Config_Shopware6;
@@ -103,6 +106,8 @@ public class ExternalSystemConfigRepo
 				return getById(ExternalSystemWooCommerceConfigId.cast(id));
 			case GRSSignum:
 				return getById(ExternalSystemGRSSignumConfigId.cast(id));
+			case Amazon:
+				return getById(ExternalSystemAmazonConfigId.cast(id));
 			default:
 				throw Check.fail("Unsupported IExternalSystemChildConfigId.type={}", id.getType());
 		}
@@ -128,6 +133,9 @@ public class ExternalSystemConfigRepo
 			case RabbitMQ:
 				return getRabbitMQConfigByValue(value)
 						.map(this::getExternalSystemParentConfig);
+			case Amazon:
+				return getAmazonConfigByValue(value)
+						.map(this::getExternalSystemParentConfig);
 			default:
 				throw Check.fail("Unsupported IExternalSystemChildConfigId.type={}", type);
 		}
@@ -152,6 +160,8 @@ public class ExternalSystemConfigRepo
 				return getWooCommerceConfigByParentId(id);
 			case GRSSignum:
 				return getGRSSignumConfigByParentId(id);
+			case Amazon:
+				return getAmazonConfigByParentId(id);
 			default:
 				throw Check.fail("Unsupported IExternalSystemChildConfigId.type={}", externalSystemType);
 		}
@@ -186,6 +196,9 @@ public class ExternalSystemConfigRepo
 				break;
 			case GRSSignum:
 				result = getAllByTypeGRS();
+				break;
+			case Amazon:
+				result = getAllByTypeAmazon();
 				break;
 			case Shopware6:
 			case Other:
@@ -225,6 +238,8 @@ public class ExternalSystemConfigRepo
 					return getAlbertaConfigByQuery(query);
 			case Shopware6:
 				return getShopware6ConfigByQuery(query);
+			case Amazon:
+				return getAmazonConfigByQuery(query);
 			default:
 				throw Check.fail("Unsupported IExternalSystemChildConfigId.type={}", externalSystemType);
 		}
@@ -777,4 +792,131 @@ public class ExternalSystemConfigRepo
 				.shopwareCode(record.getShopwareCode())
 				.build();
 	}
+
+
+	@NonNull
+	private Optional<I_ExternalSystem_Config_Amazon> getAmazonConfigByValue(@NonNull final String value)
+	{
+		return queryBL.createQueryBuilder(I_ExternalSystem_Config_Amazon.class)
+				.addOnlyActiveRecordsFilter()
+				.addEqualsFilter(I_ExternalSystem_Config_Amazon.COLUMNNAME_ExternalSystemValue, value)
+				.create()
+				.firstOnlyOptional(I_ExternalSystem_Config_Amazon.class);
+	}
+
+	@NonNull
+	private Optional<IExternalSystemChildConfig> getAmazonConfigByParentId(@NonNull final ExternalSystemParentConfigId id)
+	{
+		return queryBL.createQueryBuilder(I_ExternalSystem_Config_Amazon.class)
+				.addOnlyActiveRecordsFilter()
+				.addEqualsFilter(I_ExternalSystem_Config_Amazon.COLUMNNAME_ExternalSystem_Config_ID, id.getRepoId())
+				.create()
+				.firstOnlyOptional(I_ExternalSystem_Config_Amazon.class)
+				.map(this::buildExternalSystemAmazonConfig);
+	}
+	@NonNull
+	private ImmutableList<ExternalSystemParentConfig> getAllByTypeAmazon()
+	{
+		return queryBL.createQueryBuilder(I_ExternalSystem_Config_Amazon.class)
+				.addOnlyActiveRecordsFilter()
+				.create()
+				.stream()
+				.map(this::getExternalSystemParentConfig)
+				.collect(ImmutableList.toImmutableList());
+	}
+
+	@NonNull
+	private ExternalSystemParentConfig getById(@NonNull final ExternalSystemAmazonConfigId id)
+	{
+		final I_ExternalSystem_Config_Amazon config = InterfaceWrapperHelper.load(id, I_ExternalSystem_Config_Amazon.class);
+
+		return getExternalSystemParentConfig(config);
+	}
+
+	@NonNull
+	private ExternalSystemParentConfig getExternalSystemParentConfig(@NonNull final I_ExternalSystem_Config_Amazon config)
+	{
+		final ExternalSystemAmazonConfig child = buildExternalSystemAmazonConfig(config);
+
+		return getById(child.getParentId())
+				.childConfig(child)
+				.build();
+	}
+
+	@NonNull
+	private ExternalSystemAmazonConfig buildExternalSystemAmazonConfig(@NonNull final I_ExternalSystem_Config_Amazon config)
+	{
+
+		return ExternalSystemAmazonConfig.builder()
+				.id(ExternalSystemAmazonConfigId.ofRepoId(config.getExternalSystem_Config_Amazon_ID()))
+				.parentId(ExternalSystemParentConfigId.ofRepoId(config.getExternalSystem_Config_ID()))
+				.value(config.getExternalSystemValue())
+				.name(config.getName())
+				.basePath(config.getBasePath())
+				.accessKeyId(config.getAccessKeyId())
+				.clientId(config.getClientID())
+				.clientSecret(config.getClientSecret())
+				.lwaEndpoint(config.getLWAEndpoint())
+				.secretKey(config.getSecretKey())
+				.refreshToken(config.getRefreshToken())
+				.regionName(config.getRegionName())
+				.roleArn(config.getRoleArn())
+				.debugProtocol(config.isDebugProtocol())
+				.active(config.isActive())
+				.build();
+	}
+
+	private Optional<ExternalSystemParentConfig> getAmazonConfigByQuery(@NonNull final ExternalSystemConfigQuery query)
+	{
+		final IQueryBuilder<I_ExternalSystem_Config_Amazon> queryBuilder = queryBL.createQueryBuilder(I_ExternalSystem_Config_Amazon.class);
+
+		queryBuilder.addEqualsFilter(I_ExternalSystem_Config_Amazon.COLUMNNAME_ExternalSystem_Config_ID, query.getParentConfigId().getRepoId());
+
+		if (query.getIsActive() != null)
+		{
+			queryBuilder.addEqualsFilter(I_ExternalSystem_Config_Amazon.COLUMNNAME_IsActive, query.getIsActive());
+		}
+
+		return queryBuilder
+				.create()
+				.firstOnlyOptional(I_ExternalSystem_Config_Amazon.class)
+				.map(ex -> buildExternalSystemAmazonConfig(ex))
+				.map(amazonConfig -> getById(query.getParentConfigId())
+						.childConfig(amazonConfig).build());
+	}
+
+	/* todo mappings
+
+	private List<ExternalSystemAmazonConfigMapping> getExternalSystemAmazonConfigMappingList(@NonNull final ExternalSystemAmazonConfigId externalSystemAmazonConfigId)
+	{
+		return queryBL.createQueryBuilder(I_ExternalSystem_Config_Amazon_Mapping.class)
+				.addOnlyActiveRecordsFilter()
+				.addEqualsFilter(I_ExternalSystem_Config_Amazon_Mapping.COLUMNNAME_ExternalSystem_Config_Amazon_ID, externalSystemAmazonConfigId)
+				.create()
+				.list()
+				.stream()
+				.map(this::toExternalSystemAmazonConfigMapping)
+				.collect(ImmutableList.toImmutableList());
+
+	}
+
+	@NonNull
+	private ExternalSystemAmazonConfigMapping toExternalSystemAmazonConfigMapping(@NonNull final I_ExternalSystem_Config_Amazon_Mapping record)
+	{
+		return ExternalSystemAmazonConfigMapping.builder()
+				.docTypeOrderId(record.getC_DocTypeOrder_ID())
+				.paymentRule(record.getPaymentRule())
+				.paymentTermId(record.getC_PaymentTerm_ID())
+				.ebayCustomerGroup(record.getEBayCustomerGroup())
+				.ebayPaymentMethod(record.getEBayPaymentMethod())
+				.description(record.getDescription())
+				.seqNo(record.getSeqNo())
+				.isInvoiceEmailEnabled(record.isInvoiceEmailEnabled())
+				.bpartnerIfExists(record.getBPartner_IfExists())
+				.bpartnerIfNotExists(record.getBPartner_IfNotExists())
+				.bpartnerLocationIfExists(record.getBPartnerLocation_IfExists())
+				.bpartnerLocationIfNotExists(record.getBPartnerLocation_IfNotExists())
+				.build();
+	}
+	*/
 }

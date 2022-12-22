@@ -52,7 +52,8 @@ public final class POInfoColumn implements Serializable
 			final boolean isTranslated,
 			final boolean isEncrypted,
 			final boolean isAllowLogging,
-			final boolean isRestAPICustomColumn)
+			final boolean isRestAPICustomColumn,
+			final int adSequenceID)
 	{
 		AD_Column_ID = ad_Column_ID;
 		ColumnName = columnName;
@@ -111,6 +112,7 @@ public final class POInfoColumn implements Serializable
 		IsEncrypted = isEncrypted;
 		IsAllowLogging = isAllowLogging;
 		IsRestAPICustomColumn = isRestAPICustomColumn;
+		AD_Sequence_ID = adSequenceID;
 	}   // Column
 
 	private static boolean isString(
@@ -151,6 +153,11 @@ public final class POInfoColumn implements Serializable
 		}
 
 		return false;
+	}
+
+	public boolean isString()
+	{
+		return isString(TableName, ColumnName, DisplayType, AD_Reference_Value_ID);
 	}
 
 	private static boolean isSearchDisplayType(final int displayType)
@@ -269,6 +276,8 @@ public final class POInfoColumn implements Serializable
 	/* package */ boolean IsSelectionColumn;
 
 	private final String sqlColumnForSelect;
+
+	private final int AD_Sequence_ID;
 
 	/**
 	 * Cached {@link MLookupInfo} for {@link Env#WINDOW_None} (most used case)
@@ -393,6 +402,11 @@ public final class POInfoColumn implements Serializable
 	public boolean isRestAPICustomColumn()
 	{
 		return IsRestAPICustomColumn;
+	}
+
+	public int getAD_Sequence_ID()
+	{
+		return AD_Sequence_ID;
 	}
 
 	@Nullable

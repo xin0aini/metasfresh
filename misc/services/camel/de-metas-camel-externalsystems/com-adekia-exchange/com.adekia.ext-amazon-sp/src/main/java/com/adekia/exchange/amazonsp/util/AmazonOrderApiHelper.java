@@ -66,9 +66,11 @@ public class AmazonOrderApiHelper
 				.awsAuthenticationCredentials(awsAuthenticationCredentials)
 				.lwaAuthorizationCredentials(lwaAuthorizationCredentials)
 				.awsAuthenticationCredentialsProvider(awsAuthenticationCredentialsProvider)
-				//.endpoint(ctx.getProperties().get("endpoint"))			// todo
-				.endpoint("https://sellingpartnerapi-eu.amazon.com")		//	Make it a parameter in ExternalSystem_Config_Amazon
+				.endpoint(ctx.getProperties().get("BasePath"))
 				.build();
+
+		if ("true".equalsIgnoreCase(ctx.getProperties().get("Debug")))
+			ordersApi.getApiClient().mock =true;								// Allow to bypass LWA
 
 		return ordersApi;
 	}

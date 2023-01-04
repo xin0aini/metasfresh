@@ -24,6 +24,7 @@ package com.adekia.exchange.metasfresh.util;
 
 import de.metas.common.bpartner.v2.request.JsonRequestLocation;
 import oasis.names.specification.ubl.schema.xsd.commonaggregatecomponents_23.AddressType;
+import oasis.names.specification.ubl.schema.xsd.commonaggregatecomponents_23.LocationType;
 import oasis.names.specification.ubl.schema.xsd.order_23.OrderType;
 import org.springframework.util.CollectionUtils;
 
@@ -37,13 +38,15 @@ public class MetasfreshOrderBPartnerLocation {
         buyerLocation.setShipToDefault(true);
 
         if (!CollectionUtils.isEmpty(order.getDelivery())) {
-            AddressType adr = order.getDeliveryAtIndex(0).getDeliveryAddress();
+            LocationType location = order.getDeliveryAtIndex(0).getDeliveryLocation();
+            buyerLocation.setName(location.getNameValue());
+            AddressType adr = location.getAddress();
             if (adr != null) {
                 if (adr.getAddressLineCount() > 0)
                     buyerLocation.setAddress1(adr.getAddressLineAtIndex(0).getLineValue());
                 if (adr.getAddressLineCount() > 1)
                     buyerLocation.setAddress2(adr.getAddressLineAtIndex(1).getLineValue());
-                if (adr.getAddressLineCount() > 1)
+                if (adr.getAddressLineCount() > 2)
                     buyerLocation.setAddress3(adr.getAddressLineAtIndex(2).getLineValue());
                 buyerLocation.setPostal(adr.getPostalZoneValue());
                 buyerLocation.setCity(adr.getCityNameValue());
@@ -51,13 +54,6 @@ public class MetasfreshOrderBPartnerLocation {
                     buyerLocation.setCountryCode(adr.getCountry().getIdentificationCodeValue());
             }
         }
-
-        if (order.getBuyerCustomerParty() != null
-                && order.getBuyerCustomerParty().getParty() != null
-                && !CollectionUtils.isEmpty(order.getBuyerCustomerParty().getParty().getPartyName())
-        )
-
-        buyerLocation.setName(order.getBuyerCustomerParty().getParty().getPartyNameAtIndex(0).getNameValue());
 
         if (buyerLocation.getCountryCode() == null || buyerLocation.getCountryCode().length()==0)
             buyerLocation.setCountryCode("FR"); // todo

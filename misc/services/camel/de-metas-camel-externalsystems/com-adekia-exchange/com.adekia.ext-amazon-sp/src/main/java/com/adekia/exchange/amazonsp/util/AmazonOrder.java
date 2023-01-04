@@ -39,6 +39,7 @@ import oasis.names.specification.ubl.schema.xsd.commonaggregatecomponents_23.Del
 import oasis.names.specification.ubl.schema.xsd.commonaggregatecomponents_23.ItemIdentificationType;
 import oasis.names.specification.ubl.schema.xsd.commonaggregatecomponents_23.ItemType;
 import oasis.names.specification.ubl.schema.xsd.commonaggregatecomponents_23.LineItemType;
+import oasis.names.specification.ubl.schema.xsd.commonaggregatecomponents_23.LocationType;
 import oasis.names.specification.ubl.schema.xsd.commonaggregatecomponents_23.MonetaryTotalType;
 import oasis.names.specification.ubl.schema.xsd.commonaggregatecomponents_23.OrderLineType;
 import oasis.names.specification.ubl.schema.xsd.commonaggregatecomponents_23.PartyIdentificationType;
@@ -69,7 +70,7 @@ public class AmazonOrder {
 
         if (!StringHelper.hasText(amazonOrder.getAmazonOrderId()))
             raiseRequiredException("AmazonOrderId");
-        order.setSalesOrderID(AmazonOrderConstant.AMAZON_PREFIX + amazonOrder.getSellerOrderId());
+        order.setSalesOrderID(amazonOrder.getAmazonOrderId());
         order.setUUID(amazonOrder.getAmazonOrderId());
         if (amazonOrder.getPurchaseDate() == null)
             raiseRequiredException("PurchaseDate");
@@ -104,21 +105,12 @@ public class AmazonOrder {
         if (!StringHelper.hasText(amazonOrder.getMarketplaceId()))
             raiseRequiredException("MarketplaceId");
         ptSupplier.setEndpointID(amazonOrder.getMarketplaceId());
-        if (amazonOrder.getBuyerInfo() != null) {
-            PartyNameType pnt = new PartyNameType();
-            pnt.setName(amazonOrder.getBuyerInfo().getBuyerName());
-            ptSupplier.addPartyName(pnt);
-
-            ContactType ct = new ContactType();
-            ct.setElectronicMail(amazonOrder.getBuyerInfo().getBuyerEmail());
-            ct.setName(amazonOrder.getBuyerInfo().getBuyerName());
-
-            ptSupplier.setContact(ct);
-        }
-        if (amazonOrder.getBuyerTaxInformation() != null) {
-            PartyIdentificationType pit = new PartyIdentificationType();
-            pit.setID(amazonOrder.getBuyerTaxInformation().getBuyerTaxRegistrationId());
-            ptSupplier.addPartyIdentification(pit);
+        if (amazonOrder.getDefaultShipFromLocationAddress() != null)
+        {
+            LocationType lt = new LocationType();
+            lt.setAddress(getAddressType(amazonOrder.getDefaultShipFromLocationAddress()));
+            lt.setName(lt.getAddress().getIDValue());
+            ptSupplier.setPhysicalLocation(lt);
         }
         spt.setParty(ptSupplier);
         order.setSellerSupplierParty(spt);
@@ -138,12 +130,12 @@ public class AmazonOrder {
 
             PartyNameType pnt = new PartyNameType();
             pnt.setName(amazonOrder.getBuyerInfo().getBuyerName());
+            if (! StringHelper.hasText(pnt.getNameValue()))
+                pnt.setName(ct.getElectronicMailValue());       // Should not happend
             pt.addPartyName(pnt);
+            pt.setPostalAddress(getAddressType(amazonOrder.getShippingAddress()));  // Shipping Address cannot be null
+
             cpt.setParty(pt);
-
-            if (amazonOrder.getShippingAddress() != null)
-                pt.setPostalAddress(getAddressType(amazonOrder.getShippingAddress()));
-
         }
 
         if (amazonOrder.getBuyerTaxInformation() != null) {
@@ -180,6 +172,10 @@ public class AmazonOrder {
         }
         if (amazonOrder.getShippingAddress() != null) {
             delivery.setDeliveryAddress(getAddressType(amazonOrder.getShippingAddress()));
+            LocationType location = new LocationType();
+            location.setName(amazonOrder.getShippingAddress().getName());
+            location.setAddress(getAddressType(amazonOrder.getShippingAddress()));
+            delivery.setDeliveryLocation(location);
         }
 
         order.addDelivery(delivery);
@@ -287,7 +283,8 @@ public class AmazonOrder {
 
     private static AddressType getAddressType(Address amazonAddress) {
         AddressType address = new AddressType();
-
+        if (amazonAddress == null)
+            raiseRequiredException("ShippingAddress");
         if (!StringHelper.hasText(amazonAddress.getName()))
             raiseRequiredException("ShippingAddress.Name");
         address.setID(amazonAddress.getName());

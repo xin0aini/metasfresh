@@ -26,9 +26,9 @@ import de.metas.common.rest_api.v2.JsonInvoiceRule;
 
 @Deprecated // todo transform this class in metasfreshContextHelper @see AmazonCtxHelper
 public class MetasfreshOrderBPartnerConstant {
-    public final static String MF_BP_CODE_PREFIX = "AZ-BP-";
-    public final static String MF_BP_CONTACT_CODE_PREFIX = "AZ-US-";
-    public final static String MF_BP_GROUP = "Amazon";
+    public final static String MF_BP_CODE_PREFIX = "AZ-BP-";  // todo : there should not be any amazon reference here
+    public final static String MF_BP_CONTACT_CODE_PREFIX = "AZ-US-";  // todo : there should not be any amazon reference here
+    public final static String MF_BP_GROUP = "Amazon";  // todo : there should not be any amazon reference here
     public final static JsonInvoiceRule MF_BP_INVOICE_RULE = JsonInvoiceRule.AfterDelivery;
     public final static String MF_BP_LANGUAGE = "de_DE";
 }

@@ -25,6 +25,6 @@ package com.adekia.exchange.metasfresh.constant;
 public class MetasfreshExternalConstant {
 
     public final static String MF_EXT_ID_PREFIX = "ext";
-    public final static String MF_SYSTEM_NAME = "Amazon";
+    public final static String MF_SYSTEM_NAME = "Amazon";  // todo : there should not be any amazon reference here
 
 }

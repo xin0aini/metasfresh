@@ -34,14 +34,11 @@ public class MetasfreshOrderBPartner {
     public JsonRequestBPartner from(OrderType order) {
         JsonRequestBPartner requestBPartner = new JsonRequestBPartner();
         requestBPartner.setActive(true);
-        requestBPartner.setCode(MetasfreshOrderBPartnerConstant.MF_BP_CODE_PREFIX + order.getSalesOrderIDValue());
-        requestBPartner.setGlobalId(MetasfreshOrderBPartnerConstant.MF_BP_CODE_PREFIX + order.getSalesOrderIDValue());
         requestBPartner.setCustomer(true);
         requestBPartner.setGroup(MetasfreshOrderBPartnerConstant.MF_BP_GROUP);
         requestBPartner.setInvoiceRule(MetasfreshOrderBPartnerConstant.MF_BP_INVOICE_RULE);
         requestBPartner.setLanguage(MetasfreshOrderBPartnerConstant.MF_BP_LANGUAGE);
         requestBPartner.setVendor(false);
-        requestBPartner.setName("Fix Me !!"); // todo
 
         if (order.getBuyerCustomerParty() != null
                 && order.getBuyerCustomerParty().getParty() != null) {
@@ -49,6 +46,7 @@ public class MetasfreshOrderBPartner {
             if (!CollectionUtils.isEmpty(buyerParty.getPartyName())) {
                 PartyNameType buyerPnp = order.getBuyerCustomerParty().getParty().getPartyNameAtIndex(0);
                 requestBPartner.setCompanyName(buyerPnp.getNameValue());
+                requestBPartner.setName(buyerPnp.getNameValue());
             }
             if (buyerParty.getContact() != null) {
                 // no mail info ? buyerParty.getContact().getElectronicMailValue();
@@ -58,6 +56,9 @@ public class MetasfreshOrderBPartner {
             if (!CollectionUtils.isEmpty(buyerParty.getPartyIdentification()))
                 requestBPartner.setVatId(buyerParty.getPartyIdentificationAtIndex(0).getIDValue());
         }
+
+        requestBPartner.setCode(MetasfreshOrderBPartnerConstant.MF_BP_CODE_PREFIX + requestBPartner.getName());             // TODO Check for unicity here (Mail maybe)
+        requestBPartner.setGlobalId(MetasfreshOrderBPartnerConstant.MF_BP_CODE_PREFIX + requestBPartner.getName());         // TODO Check for unicity here (Mail maybe)
 
         requestBPartner.setSyncAdvise(SyncAdvise.JUST_CREATE_IF_NOT_EXISTS);
         return requestBPartner;

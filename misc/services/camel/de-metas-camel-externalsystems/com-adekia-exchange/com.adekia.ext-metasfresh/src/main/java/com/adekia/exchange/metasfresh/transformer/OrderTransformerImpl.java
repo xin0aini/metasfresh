@@ -55,11 +55,9 @@ public class OrderTransformerImpl implements OrderTransformer {
         JsonOLCandCreateBulkRequest.JsonOLCandCreateBulkRequestBuilder olCandCreateBulkRequestBuilder = JsonOLCandCreateBulkRequest.builder();
         JsonOLCandCreateRequest.JsonOLCandCreateRequestBuilder olCandCreateRequestBuilder = JsonOLCandCreateRequest.builder();
 
-        String orderId = (order.getSalesOrderIDValue() == null) ? ""+System.currentTimeMillis() : order.getSalesOrderIDValue();  // todo for debug purpose
-
         // Setup Order Level info
         olCandCreateRequestBuilder
-                .externalHeaderId(ExternalIdentifierFormat.formatExternalId(orderId))
+                .externalHeaderId(ExternalIdentifierFormat.formatExternalId(order.getSalesOrderIDValue()))
                 .orgCode(MetasfreshOrderConstants.MF_ORG_CODE)
                 .bpartner(getBPartnerInfo(partnerIdentifier))
                 .billBPartner(getBPartnerInfo(partnerIdentifier))
@@ -78,10 +76,9 @@ public class OrderTransformerImpl implements OrderTransformer {
                 .isManualPrice(true)
                 .paymentRule(JSONPaymentRule.ofCodeOrNull(MetasfreshOrderConstants.MF_PAYMENT_RULE))
                 .paymentTerm(MetasfreshOrderConstants.MF_PAYMENT_TERM)
-                .poReference(StringHelper.hasText(order.getCustomerReferenceValue()) ? order.getCustomerReferenceValue() : orderId) // todo fallback to orderId ?
+                .poReference(order.getSalesOrderIDValue())
                 .pricingSystemCode(MetasfreshOrderConstants.MF_PRICING_SYSTEM_CODE)
                 //.salesPartner(JsonSalesPartner.builder().salesPartnerCode(MetasfreshOrderConstants.MF_SALES_PARTNER_CODE).build()) // todo
-                .uomCode(MetasfreshOrderConstants.MF_UOM_CODE)
                 .deliveryViaRule("S")
                 .dataSource(MetasfreshOrderConstants.MF_DATA_SOURCE_INT_AMAZON)
         //				.dataDest()																									// todo  inutilisé ?
@@ -99,15 +96,24 @@ public class OrderTransformerImpl implements OrderTransformer {
     private JsonOLCandCreateRequest processOrderLine(
             @NonNull final JsonOLCandCreateRequest.JsonOLCandCreateRequestBuilder olCandCreateRequestBuilder,
             @NonNull final OrderLineType orderLine) {
+
+        BigDecimal totalPrice = orderLine.getLineItem().getPrice().getPriceAmountValue();
+        if (totalPrice == null)
+            totalPrice = BigDecimal.ZERO;
+        if (orderLine.getLineItem().getTotalTaxAmountValue() != null)
+            totalPrice = totalPrice.add(orderLine.getLineItem().getTotalTaxAmountValue());
+
         return olCandCreateRequestBuilder
 //                .dateRequired(orderLine.getLineItem().getDeliveryAtIndex(0).getLatestDeliveryDateValueLocal())            //todo NPE && ArrayOutOfBoundException
                 .description(orderLine.getLineItem().getItem().getNameValue())                                                //todo NPE
                 .externalLineId(orderLine.getLineItem().getID().getValue())                                                    //todo NPE
                 //.line(orderLine.getLineItem())																			//todo numérotation gérée par Metasfresh à valider
 //                .presetDateShipped(orderLine.getLineItem().getDeliveryAtIndex(0).getActualDeliveryDateValueLocal())        //todo NPE && ArrayOutOfBoundException
-                .price(orderLine.getLineItem().getLineExtensionAmountValue())
-                //.productIdentifier(ExternalIdentifierFormat.formatExternalId(orderLine.getLineItem().getItem().getSellersItemIdentification().getIDValue()))            //todo NPE
-                .productIdentifier(ExternalIdentifierFormat.formatExternalId("1234"))            //todo remove me
+                .price(totalPrice)
+                .isManualPrice(true)
+                .uomCode(MetasfreshOrderConstants.MF_UOM_CODE)
+                .productIdentifier(ExternalIdentifierFormat.formatExternalId(orderLine.getLineItem().getItem().getSellersItemIdentification().getIDValue()))  // todo NPE
+                .productIdentifier(ExternalIdentifierFormat.formatExternalId("1234"))            //todo remove me  this is for debug purpose only
                 .qty((orderLine.getLineItem().getQuantityValue() == null) ? BigDecimal.ONE : orderLine.getLineItem().getQuantityValue())  // todo raise exception on null
                 .build();
     }

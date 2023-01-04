@@ -31,8 +31,8 @@ public class MetasfreshOrderConstants {
     public final static String MF_ORG_CODE = "001";
     public final static String MF_PAYMENT_RULE = "D";    // Direct Debit
     public final static String MF_PAYMENT_TERM = "val-sofort";
-    public final static String MF_PRICING_SYSTEM_CODE = "Amazon";
-    public final static String MF_SALES_PARTNER_CODE = "amazon";
+    public final static String MF_PRICING_SYSTEM_CODE = "Amazon";  // todo : there should not be any amazon reference here
+    public final static String MF_SALES_PARTNER_CODE = "amazon";  // todo : there should not be any amazon reference here
     public final static String MF_UOM_CODE = "PCE";
     public final static String MF_DATA_SOURCE_INT_AMAZON = "int-Amazon";
 

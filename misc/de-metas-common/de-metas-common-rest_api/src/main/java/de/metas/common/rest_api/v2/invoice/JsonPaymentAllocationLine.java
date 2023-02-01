@@ -23,6 +23,7 @@
 package de.metas.common.rest_api.v2.invoice;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.metas.common.util.Check;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Builder;
 import lombok.NonNull;
@@ -90,6 +91,8 @@ public class JsonPaymentAllocationLine {
         {
             totalAmt = totalAmt.add(writeOffAmt);
         }
+
+        Check.assumeGreaterThanZero(totalAmt, "At least one of the following allocation amounts are mandatory in every line: amount, discountAmt, writeOffAmt");
         
         return totalAmt;
     }

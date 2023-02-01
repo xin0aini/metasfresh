@@ -32,8 +32,10 @@ import de.metas.common.rest_api.v2.invoice.JsonPaymentAllocationLine;
 import de.metas.common.rest_api.v2.invoice.JsonPaymentDirection;
 import de.metas.common.util.CoalesceUtil;
 import de.metas.common.util.time.SystemTime;
+import de.metas.currency.ConversionTypeMethod;
 import de.metas.currency.CurrencyCode;
-import de.metas.currency.ICurrencyDAO;
+import de.metas.currency.CurrencyConversionContext;
+import de.metas.currency.ICurrencyBL;
 import de.metas.document.DocBaseAndSubType;
 import de.metas.document.DocBaseType;
 import de.metas.document.DocTypeId;
@@ -114,6 +116,7 @@ import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Nullable;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -159,7 +162,7 @@ public class JsonInvoiceService
 	private final IInvoiceDAO invoiceDAO = Services.get(IInvoiceDAO.class);
 	private final ITaxDAO taxDAO = Services.get(ITaxDAO.class);
 	private final IProductBL productBL = Services.get(IProductBL.class);
-	private final ICurrencyDAO currencyDAO = Services.get(ICurrencyDAO.class);
+	private final ICurrencyBL currencyBL = Services.get(ICurrencyBL.class);
 	private final ITrxManager trxManager = Services.get(ITrxManager.class);
 	private final IInOutDAO inOutDAO = Services.get(IInOutDAO.class);
 	private final IAcctSchemaDAO acctSchemaDAO = Services.get(IAcctSchemaDAO.class);
@@ -214,7 +217,7 @@ public class JsonInvoiceService
 
 		final I_C_Invoice invoice = invoiceDAO.getByIdInTrx(invoiceId);
 
-		final CurrencyCode currency = currencyDAO.getCurrencyCodeById(CurrencyId.ofRepoId(invoice.getC_Currency_ID()));
+		final CurrencyCode currency = currencyBL.getCurrencyCodeById(CurrencyId.ofRepoId(invoice.getC_Currency_ID()));
 
 		final List<I_C_InvoiceLine> lines = invoiceDAO.retrieveLines(invoiceId);
 		for (final I_C_InvoiceLine line : lines)
@@ -387,9 +390,16 @@ public class JsonInvoiceService
 	{
 		Check.assumeNotNull(invoiceToAllocate.getInvoiceId(), "InvoiceId cannot be null at this point!");
 
+		final ClientAndOrgId clientAndOrgId = invoiceToAllocate.getClientAndOrgId();
 		final Money openAmt = moneyService.toMoney(invoiceToAllocate.getOpenAmountConverted());
+		final CurrencyId invoiceCurrencyId = openAmt.getCurrencyId();
+		final Money requestTotalAmt = convertToInvoiceCurrencyIfNecessary(allocationLine.getTotalAmt(),
+																		  dateTrx,
+																		  clientAndOrgId,
+																		  currencyId,
+																		  invoiceCurrencyId);
 
-		validateRequestAmounts(allocationLine, currencyId, openAmt);
+		validateRequestAmounts(allocationLine.getInvoiceIdentifier(), openAmt, requestTotalAmt);
 
 		final Money invoiceProcessingFee = getInvoiceProcessingFee(invoiceToAllocate, dateTrx);
 
@@ -403,33 +413,24 @@ public class JsonInvoiceService
 				.creditMemo(invoiceToAllocate.getDocBaseType().isCreditMemo())
 				.openAmt(openAmt.negateIf(soTrx.isPurchase()))
 				.date(invoiceToAllocate.getDateInvoiced())
-				.clientAndOrgId(invoiceToAllocate.getClientAndOrgId())
+				.clientAndOrgId(clientAndOrgId)
 				.currencyConversionTypeId(invoiceToAllocate.getCurrencyConversionTypeId())
 				.amountsToAllocate(AllocationAmounts.builder()
-										   .payAmt(getPayAmt(allocationLine, currencyId, invoiceProcessingFee))
-										   .discountAmt(Money.ofOrNull(allocationLine.getDiscountAmt(), currencyId))
-										   .writeOffAmt(Money.ofOrNull(allocationLine.getWriteOffAmt(), currencyId))
+										   .payAmt(getPayAmt(requestTotalAmt, invoiceProcessingFee))
+										   .discountAmt(getDiscountAmt(dateTrx,
+																	   clientAndOrgId,
+																	   allocationLine.getDiscountAmt(),
+																	   currencyId,
+																	   invoiceCurrencyId))
+										   .writeOffAmt(getWriteOffAmt(dateTrx,
+																	   clientAndOrgId,
+																	   allocationLine.getWriteOffAmt(),
+																	   currencyId,
+																	   invoiceCurrencyId))
 										   .invoiceProcessingFee(invoiceProcessingFee)
 										   .build()
 										   .convertToRealAmounts(invoiceToAllocate.getMultiplier()))
 				.build();
-	}
-
-	private void validateRequestAmounts(
-			@NonNull final JsonPaymentAllocationLine allocationLine,
-			@NonNull final CurrencyId currencyId,
-			@NonNull final Money openAmt)
-	{
-		final Money requestTotalAmt = Money.of(allocationLine.getTotalAmt(), currencyId);
-
-		if (requestTotalAmt.isGreaterThan(openAmt))
-		{
-			throw new AdempiereException("Line's total amount cannot be greater than invoice's open amount!")
-					.appendParametersToMessage()
-					.setParameter("InvoiceIdentifier", allocationLine.getInvoiceIdentifier())
-					.setParameter("Invoice.OpenAmt", openAmt.toBigDecimal())
-					.setParameter("Line.TotalAmt", requestTotalAmt.toBigDecimal());
-		}
 	}
 
 	@Nullable
@@ -762,9 +763,7 @@ public class JsonInvoiceService
 				.orElseThrow(() -> new AdempiereException(String.format(
 						"Cannot find Bank Account for org-id: %s, currency: %s and iban: %s", orgId, currencyId, request.getTargetIBAN())));
 
-		final DefaultPaymentBuilder paymentBuilder = JsonPaymentDirection.INBOUND == request.getType()
-				? paymentService.newInboundReceiptBuilder()
-				: paymentService.newOutboundPaymentBuilder();
+		final DefaultPaymentBuilder paymentBuilder = getPaymentBuilder(request);
 
 		final I_C_Payment paymentRecord = paymentBuilder
 				.bpartnerId(getBPartnerId(request.getBpartnerIdentifier(), orgId))
@@ -785,6 +784,15 @@ public class JsonInvoiceService
 	}
 
 	@NonNull
+	private DefaultPaymentBuilder getPaymentBuilder(@NonNull final JsonInvoicePaymentCreateRequest request)
+	{
+		return Optional.ofNullable(request.getType())
+				.filter(type -> JsonPaymentDirection.INBOUND != type)
+				.map(type -> paymentService.newOutboundPaymentBuilder())
+				.orElseGet(paymentService::newInboundReceiptBuilder);
+	}
+
+	@NonNull
 	private ZonedDateTime getDateTrx(
 			@NonNull final JsonInvoicePaymentCreateRequest request,
 			@NonNull final OrgId orgId)
@@ -793,12 +801,89 @@ public class JsonInvoiceService
 		return CoalesceUtil.coalesceNotNull(request.getTransactionDate(), SystemTime.asLocalDate()).atStartOfDay(zoneId);
 	}
 
+	@Nullable
+	private Money getWriteOffAmt(
+			@NonNull final ZonedDateTime dateTrx,
+			@NonNull final ClientAndOrgId clientAndOrgId,
+			@Nullable final BigDecimal writeOffValue,
+			@NonNull final CurrencyId requestCurrencyId,
+			@NonNull final CurrencyId invoiceCurrencyId)
+	{
+		return Optional.ofNullable(writeOffValue)
+				.map(writeOff -> convertToInvoiceCurrencyIfNecessary(writeOff,
+																	 dateTrx,
+																	 clientAndOrgId,
+																	 requestCurrencyId,
+																	 invoiceCurrencyId))
+				.orElse(null);
+	}
+
+	@Nullable
+	private Money getDiscountAmt(
+			@NonNull final ZonedDateTime dateTrx,
+			@NonNull final ClientAndOrgId clientAndOrgId,
+			@Nullable final BigDecimal discountAmtValue,
+			@NonNull final CurrencyId requestCurrencyId,
+			@NonNull final CurrencyId invoiceCurrencyId)
+	{
+		return Optional.ofNullable(discountAmtValue)
+				.map(discount -> convertToInvoiceCurrencyIfNecessary(discount,
+																	 dateTrx,
+																	 clientAndOrgId,
+																	 requestCurrencyId,
+																	 invoiceCurrencyId))
+				.orElse(null);
+	}
+
+	@NonNull
+	private Money convertToInvoiceCurrencyIfNecessary(
+			@NonNull final BigDecimal amt,
+			@NonNull final ZonedDateTime dateTrx,
+			@NonNull final ClientAndOrgId clientAndOrgId,
+			@NonNull final CurrencyId requestCurrencyId,
+			@NonNull final CurrencyId invoiceCurrencyId)
+	{
+		if (!invoiceCurrencyId.equals(requestCurrencyId))
+		{
+			final CurrencyConversionContext currencyConversionContext = currencyBL.createCurrencyConversionContext(
+					dateTrx.toInstant(),
+					ConversionTypeMethod.Spot,
+					clientAndOrgId.getClientId(),
+					clientAndOrgId.getOrgId());
+
+			return currencyBL.convert(currencyConversionContext,
+									  amt,
+									  requestCurrencyId,
+									  invoiceCurrencyId)
+					.getAmountAsMoney();
+		}
+		else
+		{
+			return Money.of(amt, invoiceCurrencyId);
+		}
+	}
+
+	private static void validateRequestAmounts(
+			@NonNull final String invoiceIdentifier,
+			@NonNull final Money openAmt,
+			@NonNull final Money requestTotalAmt)
+	{
+		if (requestTotalAmt.isGreaterThan(openAmt))
+		{
+			throw new AdempiereException("Line's total amount cannot be greater than invoice's open amount!")
+					.appendParametersToMessage()
+					.setParameter("InvoiceIdentifier", invoiceIdentifier)
+					.setParameter("Invoice.OpenAmt", openAmt.toBigDecimal())
+					.setParameter("Line.TotalAmt", requestTotalAmt.toBigDecimal());
+		}
+	}
+	
 	private static void validateInvoice(
 			@NonNull final InvoiceToAllocate invoiceToAllocate,
 			@NonNull final IdentifierString invoiceIdentifier,
-			@NonNull final JsonPaymentDirection type)
+			@Nullable final JsonPaymentDirection type)
 	{
-		final boolean requestSoTrx = JsonPaymentDirection.INBOUND == type;
+		final boolean requestSoTrx = type == null || JsonPaymentDirection.INBOUND == type;
 		final boolean invoiceSoTrx = invoiceToAllocate.getDocBaseType().getSoTrx().isSales();
 		if (invoiceSoTrx != requestSoTrx)
 		{
@@ -840,21 +925,13 @@ public class JsonInvoiceService
 				.orElseThrow(() -> new AdempiereException("Cannot find the orgId from either orgCode=" + orgCode + " or the current user's context."));
 	}
 
-	@Nullable
+	@NonNull
 	private static Money getPayAmt(
-			@NonNull final JsonPaymentAllocationLine allocationLine,
-			@NonNull final CurrencyId currencyId,
+			@NonNull final Money requestTotalAmt,
 			@Nullable final Money invoiceProcessingFee)
 	{
-		final Money payAmt = Money.ofOrNull(allocationLine.getAmount(), currencyId);
-
-		if (payAmt == null)
-		{
-			return null;
-		}
-
 		return Optional.ofNullable(invoiceProcessingFee)
-				.map(payAmt::subtract)
-				.orElse(payAmt);
+				.map(requestTotalAmt::subtract)
+				.orElse(requestTotalAmt);
 	}
 }

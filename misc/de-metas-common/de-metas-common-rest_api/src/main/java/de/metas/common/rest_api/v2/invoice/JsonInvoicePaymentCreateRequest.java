@@ -55,9 +55,10 @@ public class JsonInvoicePaymentCreateRequest
 	@NonNull
 	String currencyCode;
 	
-	@NonNull
-	@ApiModelProperty(required = true, //
-			value = "Specifies the direction of the payment: Inbound or Outbound.")
+	@Nullable
+	@ApiModelProperty( //
+			value = "Specifies the direction of the payment: Inbound or Outbound.\n" 
+					+ "Default value = Inbound.")
 	JsonPaymentDirection type;
 
 	@ApiModelProperty(value = "Optional, to specify the `AD_Org_ID`.\n"

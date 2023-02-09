@@ -82,6 +82,8 @@ public class C_Queue_PackageProcessor_StepDef
 				.addStringLikeFilter(I_AD_MigrationScript.COLUMNNAME_FileName, "5611430_sys_gh11947_wp_CompleteShipAndInvoiceWorkpackageProcessor.sql", true)
 				.setJoinOr()
 				.addStringLikeFilter(I_AD_MigrationScript.COLUMNNAME_FileName, "5612270_sys_gh11947_wp_ProcessOLCandsWorkpackageProcessor.sql", true)
+				.setJoinOr()
+				.addStringLikeFilter(I_AD_MigrationScript.COLUMNNAME_FileName, "5611419_sys_gh11947_fix_folder_name.sql", true)
 				.stream()
 				.forEach(record ->
 								 message.append(I_AD_MigrationScript.COLUMNNAME_AD_MigrationScript_ID).append(" : ").append(record.getAD_MigrationScript_ID()).append(" ; ")

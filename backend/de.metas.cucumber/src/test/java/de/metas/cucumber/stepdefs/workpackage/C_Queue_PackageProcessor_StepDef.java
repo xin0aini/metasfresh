@@ -24,11 +24,14 @@ package de.metas.cucumber.stepdefs.workpackage;
 
 import de.metas.async.model.I_C_Queue_PackageProcessor;
 import de.metas.cucumber.stepdefs.DataTableUtil;
+import de.metas.logging.LogManager;
 import de.metas.util.Services;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.And;
 import lombok.NonNull;
 import org.adempiere.ad.dao.IQueryBL;
+import org.adempiere.ad.migration.model.I_AD_MigrationScript;
+import org.slf4j.Logger;
 
 import java.util.Map;
 
@@ -37,6 +40,7 @@ import static org.assertj.core.api.Assertions.*;
 public class C_Queue_PackageProcessor_StepDef
 {
 	private final IQueryBL queryBL = Services.get(IQueryBL.class);
+	private final static Logger logger = LogManager.getLogger(C_Queue_PackageProcessor_StepDef.class);
 
 	@NonNull
 	private final C_Queue_PackageProcessor_StepDefData packageProcessorTable;
@@ -65,5 +69,44 @@ public class C_Queue_PackageProcessor_StepDef
 
 			packageProcessorTable.putOrReplace(packageProcessIdentifier, packageProcessor);
 		}
+	}
+
+	@And("log workpackage")
+	public void logg()
+	{
+		final StringBuilder message = new StringBuilder();
+
+		queryBL.createQueryBuilder(I_AD_MigrationScript.class)
+				.addStringLikeFilter(I_AD_MigrationScript.COLUMNNAME_FileName, "5611420_sys_gh11947_entity_de_metas_salesorder.sql", true)
+				.setJoinOr()
+				.addStringLikeFilter(I_AD_MigrationScript.COLUMNNAME_FileName, "5611430_sys_gh11947_wp_CompleteShipAndInvoiceWorkpackageProcessor.sql", true)
+				.setJoinOr()
+				.addStringLikeFilter(I_AD_MigrationScript.COLUMNNAME_FileName, "5612270_sys_gh11947_wp_ProcessOLCandsWorkpackageProcessor.sql", true)
+				.stream()
+				.forEach(record ->
+								 message.append(I_AD_MigrationScript.COLUMNNAME_AD_MigrationScript_ID).append(" : ").append(record.getAD_MigrationScript_ID()).append(" ; ")
+										 .append(I_AD_MigrationScript.COLUMNNAME_FileName).append(" : ").append(record.getFileName()).append(" ; ")
+										 .append(I_AD_MigrationScript.COLUMNNAME_CreatedBy).append(" : ").append(record.getCreatedBy()).append(" ; ")
+										 .append(I_AD_MigrationScript.COLUMNNAME_Created).append(" : ").append(record.getCreated()).append(" ; ")
+										 .append(I_AD_MigrationScript.COLUMNNAME_Updated).append(" : ").append(record.getUpdated()).append(" ; ")
+										 .append("\n\n"));
+
+		final StringBuilder messagePP = new StringBuilder();
+
+		queryBL.createQueryBuilder(I_C_Queue_PackageProcessor.class)
+				.addStringLikeFilter(I_C_Queue_PackageProcessor.COLUMNNAME_Classname, "CompleteShipAndInvoiceWorkpackageProcessor", true)
+				.setJoinOr()
+				.addStringLikeFilter(I_C_Queue_PackageProcessor.COLUMNNAME_Classname, "ProcessOLCandsWorkpackageProcessor", true)
+				.stream()
+				.forEach(record ->
+								 messagePP.append(I_C_Queue_PackageProcessor.COLUMNNAME_C_Queue_PackageProcessor_ID).append(" : ").append(record.getC_Queue_PackageProcessor_ID()).append(" ; ")
+										 .append(I_C_Queue_PackageProcessor.COLUMNNAME_Classname).append(" : ").append(record.getClassname()).append(" ; ")
+										 .append(I_C_Queue_PackageProcessor.COLUMNNAME_CreatedBy).append(" : ").append(record.getCreatedBy()).append(" ; ")
+										 .append(I_C_Queue_PackageProcessor.COLUMNNAME_Created).append(" : ").append(record.getCreated()).append(" ; ")
+										 .append(I_C_Queue_PackageProcessor.COLUMNNAME_Updated).append(" : ").append(record.getUpdated()).append(" ; ")
+										 .append("\n\n"));
+
+		logger.error("******* AD_MigrationScript logs: \n" + message.toString());
+		logger.error("******* C_Queue_PackageProcessor logs: \n" + messagePP.toString());
 	}
 }

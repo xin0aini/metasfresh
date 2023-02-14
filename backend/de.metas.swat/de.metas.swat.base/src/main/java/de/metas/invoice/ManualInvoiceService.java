@@ -323,6 +323,7 @@ public class ManualInvoiceService
 
 		editablePricingContext.setPriceDate(dateInvoiced);
 		editablePricingContext.setCountryId(countryId);
+		editablePricingContext.setFailIfNotCalculated();
 
 		return pricingBL.calculatePrice(editablePricingContext);
 	}

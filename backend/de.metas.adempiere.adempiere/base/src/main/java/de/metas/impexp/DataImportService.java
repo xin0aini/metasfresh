@@ -228,8 +228,8 @@ public class DataImportService
 
 		return ReportResultData.builder()
 				.reportData(new ByteArrayResource(headerBytes))
-				.reportFilename(importFormat.generateCSVFileName())
-				.reportContentType("text/csv")
+				.reportFilename(importFormat.generateTSVFileName())
+				.reportContentType("text/tab-separated-values")
 				.build();
 	}
 }

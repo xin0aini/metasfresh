@@ -96,8 +96,8 @@ public final class ImpFormat
 	}
 
 	@NonNull
-	public String generateCSVFileName()
+	public String generateTSVFileName()
 	{
-		return "Template_" + getName() + "_" + SystemTime.asInstant() + ".csv";
+		return "Template_" + getName() + "_" + SystemTime.asInstant() + ".tsv";
 	}
 }

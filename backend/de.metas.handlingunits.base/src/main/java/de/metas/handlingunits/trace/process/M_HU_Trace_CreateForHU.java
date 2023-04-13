@@ -1,8 +1,10 @@
 package de.metas.handlingunits.trace.process;
 
 import com.google.common.collect.ImmutableList;
+import de.metas.handlingunits.HuId;
 import de.metas.handlingunits.IHandlingUnitsDAO;
 import de.metas.handlingunits.hutransaction.IHUTrxDAO;
+import de.metas.handlingunits.inventory.InventoryRepository;
 import de.metas.handlingunits.model.I_M_HU;
 import de.metas.handlingunits.model.I_M_HU_Assignment;
 import de.metas.handlingunits.model.I_M_HU_Trx_Line;
@@ -23,6 +25,7 @@ import org.adempiere.model.InterfaceWrapperHelper;
 import org.adempiere.util.lang.impl.TableRecordReference;
 import org.apache.commons.collections4.IteratorUtils;
 import org.compiere.Adempiere;
+import org.compiere.SpringContextHolder;
 import org.compiere.model.I_M_InOutLine;
 import org.compiere.model.I_M_MovementLine;
 
@@ -57,6 +60,7 @@ import java.util.stream.Collectors;
 public class M_HU_Trace_CreateForHU extends JavaProcess
 {
 	private final IHandlingUnitsDAO handlingUnitsDAO = Services.get(IHandlingUnitsDAO.class);
+	private final InventoryRepository inventoryRepository = SpringContextHolder.instance.getBean(InventoryRepository.class);
 
 	private final transient IQueryBL queryBL = Services.get(IQueryBL.class);
 
@@ -108,7 +112,7 @@ public class M_HU_Trace_CreateForHU extends JavaProcess
 				huTraceEventsCreateAndAdd.createAndAddFor(costCollector);
 			}
 
-			final List<I_M_InventoryLine> inventoryLines = retrieveAnyModelForHU(hu, I_M_InventoryLine.class);
+			final List<I_M_InventoryLine> inventoryLines = inventoryRepository.retrieveAllLinesForHU(this, HuId.ofRepoId(hu.getM_HU_ID()));
 			for (final I_M_InventoryLine inventoryLine : inventoryLines)
 			{
 				addLog("Checking for M_Inventory_Line={}", inventoryLine);

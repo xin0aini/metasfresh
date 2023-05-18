@@ -38,7 +38,7 @@ public class HumanResourceAvailableCapacity
 	{
 		return reservations.values()
 				.stream()
-				.map(Reservation::getOverReservedCapacity)
+				.map(Reservation::getOverReservedCapacityInHours)
 				.reduce((long)0, Long::sum);
 	}
 
@@ -77,7 +77,8 @@ public class HumanResourceAvailableCapacity
 		@NonNull ResourceGroupYearWeek resourceGroupYearWeek;
 		@NonNull Duration totalCapacity;
 		@NonNull Duration reservedCapacity = Duration.ZERO;
-		@NonNull Long overReservedCapacity = (long)0;
+		@NonNull Duration overReservedCapacity = Duration.ZERO;
+		@NonNull Long overReservedCapacityInHours = (long)0;
 
 		public Reservation(@NonNull final ResourceGroupYearWeek resourceGroupYearWeek, @NonNull final Duration totalCapacity)
 		{
@@ -94,15 +95,17 @@ public class HumanResourceAvailableCapacity
 				{
 					final LocalDateTime startDate = item.getStartDate();
 					final LocalDateTime nextAvailableDate = YearWeek.from(startDate).nextWeekMonday();
-					this.overReservedCapacity = this.overReservedCapacity + Plan.PLANNING_TIME_PRECISION.between(startDate, nextAvailableDate);
+
+					this.overReservedCapacity = reservedCapacity.minus(totalCapacity);
+					this.overReservedCapacityInHours = this.overReservedCapacityInHours + Plan.PLANNING_TIME_PRECISION.between(startDate, nextAvailableDate);
 				}
 			});
 		}
 
 		@NonNull
-		public Long getOverReservedCapacity()
+		public Long getOverReservedCapacityInHours()
 		{
-			return overReservedCapacity;
+			return overReservedCapacityInHours;
 		}
 	}
 }

@@ -90,7 +90,7 @@ public class ManualPOCTest
 		final ArrayList<Step> stepsList = new ArrayList<>();
 
 		// Project 1:
-		for (int i = 1; i <= 10; i++)
+		for (int i = 1; i <= 6; i++)
 		{
 			stepsList.add(Step.builder()
 					.id(StepId.builder()
@@ -107,21 +107,21 @@ public class ManualPOCTest
 		}
 
 		// Project 2:
-		for (int i = 1; i <= 10; i++)
-		{
-			stepsList.add(Step.builder()
-					.id(StepId.builder()
-							.woProjectStepId(WOProjectStepId.ofRepoId(PROJECT_ID2, nextStepRepoId.getAndIncrement()))
-							.woProjectResourceId(WOProjectResourceId.ofRepoId(PROJECT_ID2, nextStepRepoId.get()))
-							.build())
-					.projectPriority(InternalPriority.MEDIUM)
-					.resource(resource(i, null))
-					.duration(Duration.ofHours(1))
-					.dueDate(LocalDateTime.parse("2023-05-01T15:00"))
-					.startDateMin(LocalDate.parse("2023-04-01").atStartOfDay())
-					.humanResourceTestGroupDuration(Duration.ZERO)
-					.build());
-		}
+		// for (int i = 1; i <= 10; i++)
+		// {
+		// 	stepsList.add(Step.builder()
+		// 			.id(StepId.builder()
+		// 					.woProjectStepId(WOProjectStepId.ofRepoId(PROJECT_ID2, nextStepRepoId.getAndIncrement()))
+		// 					.woProjectResourceId(WOProjectResourceId.ofRepoId(PROJECT_ID2, nextStepRepoId.get()))
+		// 					.build())
+		// 			.projectPriority(InternalPriority.MEDIUM)
+		// 			.resource(resource(i, null))
+		// 			.duration(Duration.ofHours(1))
+		// 			.dueDate(LocalDateTime.parse("2023-05-01T15:00"))
+		// 			.startDateMin(LocalDate.parse("2023-04-01").atStartOfDay())
+		// 			.humanResourceTestGroupDuration(Duration.ZERO)
+		// 			.build());
+		// }
 
 		// stepsList.stream()
 		// 		.filter(step -> ProjectId.equals(step.getProjectId(), PROJECT_ID1)

@@ -24,4 +24,10 @@ public class HumanResourceTestGroupService
 	{
 		return humanResourceTestGroupRepository.getByIds(ids);
 	}
+
+	@NonNull
+	public HumanResourceTestGroup getById(@NonNull final HumanResourceTestGroupId id)
+	{
+		return humanResourceTestGroupRepository.getById(id);
+	}
 }

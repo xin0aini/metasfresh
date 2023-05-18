@@ -62,6 +62,12 @@ public class HumanResourceTestGroupRepository
 	}
 
 	@NonNull
+	public HumanResourceTestGroup getById(@NonNull final HumanResourceTestGroupId id)
+	{
+		return getMap().getById(id);
+	}
+
+	@NonNull
 	private HumanResourceTestGroupMap getMap()
 	{
 		return cache.getOrLoad(0, this::retrieveMap);

@@ -22,7 +22,6 @@ import org.optaplanner.core.api.domain.variable.PlanningVariable;
 import javax.annotation.Nullable;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @PlanningEntity
 @Setter
@@ -145,11 +144,9 @@ public class Step
 
 	public ResourceId getResourceId() {return resource.getId();}
 
-	public List<YearWeek> getYearWeeks()
+	public YearWeek getStartDateYearWeek()
 	{
-		// all YearWeeks between start and end date
-		// expect 1
-		return null; // TODO
+		return YearWeek.from(getStartDate());
 	}
 
 	private int getDelayAsInt() {return delay != null ? delay : 0;}

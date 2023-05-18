@@ -87,11 +87,10 @@ public class PlanConstraintProvider implements ConstraintProvider
 		return constraintFactory.forEach(StepHumanResourceRequired.class)
 				.filter(StepHumanResourceRequired::isFiniteHumanResourceWeeklyCapacity)
 				.join(Step.class, Joiners.equal(StepHumanResourceRequired::getStepId, Step::getId))
-				.flattenLast(Step::getYearWeeks)
 				.groupBy(
-						(stepReq, yearWeek) -> stepReq.getResource(),
-						(stepReq, yearWeek) -> yearWeek,
-						ConstraintCollectors.sum((stepReq, yearWeek) -> stepReq.getRequiredDurationInHours())
+						(stepReq, step) -> stepReq.getResource(),
+						(stepReq, step) -> step.getStartDateYearWeek(),
+						ConstraintCollectors.sum((stepReq, step) -> stepReq.getRequiredDurationInHours())
 				)
 				.filter((resource, yearWeek, totalRequirement) -> totalRequirement > resource.getHumanResourceWeeklyCapacityInHours())
 				.penalize(ONE_HARD_2,

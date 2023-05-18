@@ -1,7 +1,9 @@
 package de.metas.calendar.plan_optimizer.domain;
 
 import de.metas.calendar.plan_optimizer.solver.DelayStrengthComparator;
+import de.metas.calendar.plan_optimizer.solver.weekly_capacities.YearWeek;
 import de.metas.i18n.BooleanWithReason;
+import de.metas.product.ResourceId;
 import de.metas.project.InternalPriority;
 import de.metas.project.ProjectId;
 import de.metas.util.time.DurationUtils;
@@ -20,6 +22,7 @@ import org.optaplanner.core.api.domain.variable.PlanningVariable;
 import javax.annotation.Nullable;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @PlanningEntity
 @Setter
@@ -139,6 +142,15 @@ public class Step
 	}
 
 	public ProjectId getProjectId() {return getId().getProjectId();}
+
+	public ResourceId getResourceId() {return resource.getId();}
+
+	public List<YearWeek> getYearWeeks()
+	{
+		// all YearWeeks between start and end date
+		// expect 1
+		return null; // TODO
+	}
 
 	private int getDelayAsInt() {return delay != null ? delay : 0;}
 

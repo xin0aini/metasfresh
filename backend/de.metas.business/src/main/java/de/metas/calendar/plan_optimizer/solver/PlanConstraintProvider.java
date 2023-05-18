@@ -3,6 +3,7 @@ package de.metas.calendar.plan_optimizer.solver;
 import com.google.common.collect.ImmutableSet;
 import de.metas.calendar.plan_optimizer.domain.Plan;
 import de.metas.calendar.plan_optimizer.domain.Step;
+import de.metas.calendar.plan_optimizer.domain.StepHumanResourceRequired;
 import de.metas.calendar.plan_optimizer.solver.weekly_capacities.HumanResourceAvailableCapacity;
 import de.metas.calendar.plan_optimizer.solver.weekly_capacities.ResourceGroupYearWeek;
 import de.metas.calendar.plan_optimizer.solver.weekly_capacities.StepRequiredCapacity;
@@ -83,16 +84,30 @@ public class PlanConstraintProvider implements ConstraintProvider
 
 	Constraint humanResourceAvailableCapacity(final ConstraintFactory constraintFactory)
 	{
-		return constraintFactory.forEach(Step.class)
-				.filter(step -> step.getResource().getHumanResourceTestGroupId() != null)
-				.filter(step -> !step.getHumanResourceTestGroupDuration().isZero())
-				.groupBy(ConstraintCollectors.sum(
-						StepRequiredCapacity::ofStep,
-						StepRequiredCapacity.ZERO,
-						StepRequiredCapacity::add,
-						StepRequiredCapacity::subtract))
-				.penalize(ONE_HARD_2, this::computePenaltyWeight_availableCapacity)
+		return constraintFactory.forEach(StepHumanResourceRequired.class)
+				.filter(StepHumanResourceRequired::isFiniteHumanResourceWeeklyCapacity)
+				.join(Step.class, Joiners.equal(StepHumanResourceRequired::getStepId, Step::getId))
+				.flattenLast(Step::getYearWeeks)
+				.groupBy(
+						(stepReq, yearWeek) -> stepReq.getResource(),
+						(stepReq, yearWeek) -> yearWeek,
+						ConstraintCollectors.sum((stepReq, yearWeek) -> stepReq.getRequiredDurationInHours())
+				)
+				.filter((resource, yearWeek, totalRequirement) -> totalRequirement > resource.getHumanResourceWeeklyCapacityInHours())
+				.penalize(ONE_HARD_2,
+						(resource, yearWeek, totalRequirement) -> totalRequirement - resource.getHumanResourceWeeklyCapacityInHours())
 				.asConstraint("Available human resource test group capacity");
+
+		// return constraintFactory.forEach(Step.class)
+		// 		.filter(step -> step.getResource().getHumanResourceTestGroupId() != null)
+		// 		.filter(step -> !step.getHumanResourceTestGroupDuration().isZero())
+		// 		.groupBy(ConstraintCollectors.sum(
+		// 				StepRequiredCapacity::ofStep,
+		// 				StepRequiredCapacity.ZERO,
+		// 				StepRequiredCapacity::add,
+		// 				StepRequiredCapacity::subtract))
+		// 		.penalize(ONE_HARD_2, this::computePenaltyWeight_availableCapacity)
+		// 		.asConstraint("Available human resource test group capacity");
 	}
 
 	private int computePenaltyWeight_availableCapacity(final StepRequiredCapacity requiredCapacity)

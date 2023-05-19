@@ -1,17 +1,10 @@
 package de.metas.calendar.plan_optimizer.solver;
 
-import com.google.common.collect.ImmutableSet;
 import de.metas.calendar.plan_optimizer.domain.Plan;
 import de.metas.calendar.plan_optimizer.domain.Step;
 import de.metas.calendar.plan_optimizer.domain.StepHumanResourceRequired;
-import de.metas.calendar.plan_optimizer.solver.weekly_capacities.HumanResourceAvailableCapacity;
-import de.metas.calendar.plan_optimizer.solver.weekly_capacities.ResourceGroupYearWeek;
-import de.metas.calendar.plan_optimizer.solver.weekly_capacities.StepRequiredCapacity;
 import de.metas.project.InternalPriority;
-import de.metas.resource.HumanResourceTestGroupId;
-import de.metas.resource.HumanResourceTestGroupService;
 import de.metas.util.Check;
-import org.compiere.SpringContextHolder;
 import org.optaplanner.core.api.score.buildin.bendable.BendableScore;
 import org.optaplanner.core.api.score.stream.Constraint;
 import org.optaplanner.core.api.score.stream.ConstraintCollectors;
@@ -22,7 +15,6 @@ import org.optaplanner.core.api.score.stream.bi.BiJoiner;
 import org.optaplanner.core.impl.score.stream.JoinerSupport;
 
 import java.time.LocalDateTime;
-import java.util.Set;
 
 public class PlanConstraintProvider implements ConstraintProvider
 {
@@ -35,22 +27,20 @@ public class PlanConstraintProvider implements ConstraintProvider
 	private static final BendableScore ONE_SOFT_2 = BendableScore.of(new int[] { 0, 0 }, new int[] { 0, 1, 0 });
 	private static final BendableScore ONE_SOFT_3 = BendableScore.of(new int[] { 0, 0 }, new int[] { 0, 0, 1 });
 
-	private final HumanResourceTestGroupService humanResourceTestGroupService = SpringContextHolder.instance.getBean(HumanResourceTestGroupService.class);
-
 	@Override
 	public Constraint[] defineConstraints(final ConstraintFactory constraintFactory)
 	{
 		return new Constraint[] {
 				// Hard:
-				resourceConflict(constraintFactory),
+				// resourceConflict(constraintFactory),
 				startDateMin(constraintFactory),
 				dueDate(constraintFactory),
 				humanResourceAvailableCapacity(constraintFactory),
 				// Soft:
-				stepsNotRespectingProjectPriority(constraintFactory),
-				delayIsMinimum(constraintFactory),
-				minDurationFromEndToDueDateIsMaximum(constraintFactory),
-				sumOfDurationFromEndToDueDateIsMaximum(constraintFactory),
+				// stepsNotRespectingProjectPriority(constraintFactory),
+				// delayIsMinimum(constraintFactory),
+				// minDurationFromEndToDueDateIsMaximum(constraintFactory),
+				// sumOfDurationFromEndToDueDateIsMaximum(constraintFactory),
 		};
 	}
 
@@ -109,17 +99,17 @@ public class PlanConstraintProvider implements ConstraintProvider
 		// 		.asConstraint("Available human resource test group capacity");
 	}
 
-	private int computePenaltyWeight_availableCapacity(final StepRequiredCapacity requiredCapacity)
-	{
-		final Set<HumanResourceTestGroupId> ids = requiredCapacity.getMap().keySet()
-				.stream()
-				.map(ResourceGroupYearWeek::getGroupId)
-				.collect(ImmutableSet.toImmutableSet());
-
-		final HumanResourceAvailableCapacity humanResourceAvailableCapacity = HumanResourceAvailableCapacity.of(humanResourceTestGroupService.getByIds(ids));
-		humanResourceAvailableCapacity.reserveCapacity(requiredCapacity);
-		return humanResourceAvailableCapacity.getOverReservedCapacity().intValue();
-	}
+	// private int computePenaltyWeight_availableCapacity(final StepRequiredCapacity requiredCapacity) //todo fp
+	// {
+	// 	final Set<HumanResourceTestGroupId> ids = requiredCapacity.getMap().keySet()
+	// 			.stream()
+	// 			.map(ResourceGroupYearWeek::getGroupId)
+	// 			.collect(ImmutableSet.toImmutableSet());
+	//
+	// 	final HumanResourceAvailableCapacity humanResourceAvailableCapacity = HumanResourceAvailableCapacity.of(humanResourceTestGroupService.getByIds(ids));
+	// 	humanResourceAvailableCapacity.reserveCapacity(requiredCapacity);
+	// 	return humanResourceAvailableCapacity.getOverReservedCapacity().intValue();
+	// }
 
 	Constraint delayIsMinimum(final ConstraintFactory constraintFactory)
 	{

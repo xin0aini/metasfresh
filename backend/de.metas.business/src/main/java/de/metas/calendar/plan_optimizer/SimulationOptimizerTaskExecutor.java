@@ -7,6 +7,7 @@ import de.metas.organization.IOrgDAO;
 import de.metas.project.workorder.calendar.WOProjectSimulationService;
 import de.metas.project.workorder.conflicts.WOProjectConflictService;
 import de.metas.project.workorder.project.WOProjectService;
+import de.metas.resource.HumanResourceTestGroupService;
 import de.metas.resource.ResourceService;
 import de.metas.util.Services;
 import lombok.NonNull;
@@ -34,7 +35,8 @@ public class SimulationOptimizerTaskExecutor
 			@NonNull final WOProjectService woProjectService,
 			@NonNull final WOProjectSimulationService woProjectSimulationService,
 			@NonNull final WOProjectConflictService woProjectConflictService,
-			@NonNull final ResourceService resourceService)
+			@NonNull final ResourceService resourceService,
+			@NonNull final HumanResourceTestGroupService humanResourceTestGroupService)
 	{
 		this.solverFactory = solverFactory;
 		this.simulationOptimizerStatusDispatcher = simulationOptimizerStatusDispatcher;
@@ -43,7 +45,8 @@ public class SimulationOptimizerTaskExecutor
 				woProjectService,
 				woProjectSimulationService,
 				woProjectConflictService,
-				resourceService);
+				resourceService,
+				humanResourceTestGroupService);
 
 		executorService = createExecutorService();
 	}

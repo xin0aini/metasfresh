@@ -1,7 +1,6 @@
 package de.metas.calendar.plan_optimizer.domain;
 
 import de.metas.product.ResourceId;
-import de.metas.resource.HumanResourceTestGroupId;
 import lombok.NonNull;
 import lombok.Value;
 import org.optaplanner.core.api.domain.lookup.PlanningId;
@@ -15,8 +14,6 @@ public class Resource
 	@PlanningId @NonNull ResourceId id;
 	@NonNull String name;
 
-	@Nullable HumanResourceTestGroupId humanResourceTestGroupId;
-
 	@Nullable Duration humanResourceWeeklyCapacity;
 
 	@Override
@@ -29,7 +26,7 @@ public class Resource
 
 	public int getHumanResourceWeeklyCapacityInHours()
 	{
-		return humanResourceWeeklyCapacity != null
+		return isFiniteHumanResourceWeeklyCapacity()
 				? (int)humanResourceWeeklyCapacity.toHours()
 				: Integer.MAX_VALUE;
 	}

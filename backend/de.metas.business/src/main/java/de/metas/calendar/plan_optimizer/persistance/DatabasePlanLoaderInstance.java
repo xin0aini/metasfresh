@@ -1,9 +1,11 @@
 package de.metas.calendar.plan_optimizer.persistance;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import de.metas.calendar.plan_optimizer.domain.Plan;
 import de.metas.calendar.plan_optimizer.domain.Resource;
 import de.metas.calendar.plan_optimizer.domain.Step;
+import de.metas.calendar.plan_optimizer.domain.StepHumanResourceRequired;
 import de.metas.calendar.plan_optimizer.domain.StepId;
 import de.metas.calendar.simulation.SimulationPlanId;
 import de.metas.common.util.CoalesceUtil;
@@ -21,6 +23,8 @@ import de.metas.project.workorder.resource.WOProjectResource;
 import de.metas.project.workorder.resource.WOProjectResourcesCollection;
 import de.metas.project.workorder.step.WOProjectStep;
 import de.metas.project.workorder.step.WOProjectStepsCollection;
+import de.metas.resource.HumanResourceTestGroup;
+import de.metas.resource.HumanResourceTestGroupService;
 import de.metas.resource.ResourceService;
 import lombok.Builder;
 import lombok.NonNull;
@@ -45,6 +49,7 @@ public class DatabasePlanLoaderInstance
 	private final WOProjectService woProjectService;
 	private final WOProjectSimulationService woProjectSimulationService;
 	private final ResourceService resourceService;
+	private final HumanResourceTestGroupService humanResourceTestGroupService;
 
 	//
 	// Params
@@ -64,6 +69,7 @@ public class DatabasePlanLoaderInstance
 			final @NonNull WOProjectService woProjectService,
 			final @NonNull WOProjectSimulationService woProjectSimulationService,
 			final @NonNull ResourceService resourceService,
+			final @NonNull HumanResourceTestGroupService humanResourceTestGroupService,
 			//
 			final @NonNull SimulationPlanId simulationId)
 	{
@@ -71,6 +77,7 @@ public class DatabasePlanLoaderInstance
 		this.woProjectService = woProjectService;
 		this.woProjectSimulationService = woProjectSimulationService;
 		this.resourceService = resourceService;
+		this.humanResourceTestGroupService = humanResourceTestGroupService;
 		this.simulationId = simulationId;
 	}
 
@@ -98,6 +105,12 @@ public class DatabasePlanLoaderInstance
 		optaPlannerPlan.setTimeZone(timeZone);
 		optaPlannerPlan.setStepsList(stepsList);
 
+		final List<StepHumanResourceRequired> stepHumanResourceRequiredList = stepsList.stream()
+				.map(Step::computeStepHumanResourceRequired)
+				.collect(ImmutableList.toImmutableList());
+
+		optaPlannerPlan.setStepHumanResourceRequiredList(stepHumanResourceRequiredList);
+
 		return optaPlannerPlan;
 	}
 
@@ -108,7 +121,7 @@ public class DatabasePlanLoaderInstance
 		final ArrayList<Step> stepsList = new ArrayList<>();
 		Step prevStep = null;
 
-		for (WOProjectStep woStep : stepsByProjectId.getByProjectId(woProject.getProjectId()).toOrderedList())
+		for (final WOProjectStep woStep : stepsByProjectId.getByProjectId(woProject.getProjectId()).toOrderedList())
 		{
 			final LocalDateTime startDateMin = Optional.ofNullable(woStep.getDeliveryDate())
 					.map(this::toLocalDateTime)
@@ -242,7 +255,13 @@ public class DatabasePlanLoaderInstance
 	private de.metas.calendar.plan_optimizer.domain.Resource createOptaPlannerResource(final ResourceId resourceId)
 	{
 		final de.metas.resource.Resource resource = resourceService.getResourceById(resourceId);
-		return new de.metas.calendar.plan_optimizer.domain.Resource(resource.getResourceId(), resource.getName().getDefaultValue(), resource.getHumanResourceTestGroupId());
+
+		final Duration hrWeeklyCapacityInHours = Optional.ofNullable(resource.getHumanResourceTestGroupId())
+				.map(humanResourceTestGroupService::getById)
+				.map(HumanResourceTestGroup::getWeeklyCapacity)
+				.orElse(null);
+
+		return new de.metas.calendar.plan_optimizer.domain.Resource(resource.getResourceId(), resource.getName().getDefaultValue(), hrWeeklyCapacityInHours);
 	}
 
 	public static int computeDelay(@NonNull final LocalDateTime lastStepEndDate, @Nullable final LocalDateTime thisStepStartDate)

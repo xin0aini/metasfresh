@@ -6,6 +6,7 @@ import lombok.Data;
 import org.optaplanner.core.api.domain.solution.PlanningEntityCollectionProperty;
 import org.optaplanner.core.api.domain.solution.PlanningScore;
 import org.optaplanner.core.api.domain.solution.PlanningSolution;
+import org.optaplanner.core.api.domain.solution.ProblemFactCollectionProperty;
 import org.optaplanner.core.api.score.ScoreExplanation;
 import org.optaplanner.core.api.score.buildin.bendable.BendableScore;
 
@@ -13,6 +14,7 @@ import java.time.Duration;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.List;
 
 @PlanningSolution
 @Data
@@ -25,6 +27,9 @@ public class Plan
 
 	@PlanningEntityCollectionProperty
 	private ArrayList<Step> stepsList;
+
+	@ProblemFactCollectionProperty
+	private List<StepHumanResourceRequired> stepHumanResourceRequiredList;
 
 	@PlanningScore(bendableHardLevelsSize = PlanConstraintProvider.HARD_LEVELS_SIZE, bendableSoftLevelsSize = PlanConstraintProvider.SOFT_LEVELS_SIZE)
 	private BendableScore score;

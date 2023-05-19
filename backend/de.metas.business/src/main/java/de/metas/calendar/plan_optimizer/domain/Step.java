@@ -1,9 +1,7 @@
 package de.metas.calendar.plan_optimizer.domain;
 
 import de.metas.calendar.plan_optimizer.solver.DelayStrengthComparator;
-import de.metas.calendar.plan_optimizer.solver.weekly_capacities.YearWeek;
 import de.metas.i18n.BooleanWithReason;
-import de.metas.product.ResourceId;
 import de.metas.project.InternalPriority;
 import de.metas.project.ProjectId;
 import de.metas.util.time.DurationUtils;
@@ -29,17 +27,15 @@ import java.time.LocalDateTime;
 //@EqualsAndHashCode(doNotUseGetters = true) // IMPORTANT: do not use it beucase we have next/prev Step refs
 public class Step
 {
-	@PlanningId private StepId id;
-	private Step previousStep;
-	private Step nextStep;
-
-	InternalPriority projectPriority;
-
-	private Resource resource;
-
-	private Duration duration;
-	private LocalDateTime startDateMin;
-	private LocalDateTime dueDate;
+	@NonNull @PlanningId private StepId id;
+	@Nullable private Step previousStep;
+	@Nullable private Step nextStep;
+	@NonNull InternalPriority projectPriority;
+	@NonNull private Resource resource;
+	@NonNull private Duration duration;
+	@NonNull private LocalDateTime startDateMin;
+	@NonNull private LocalDateTime dueDate;
+	@NonNull private Duration humanResourceTestGroupDuration;
 
 	/**
 	 * Delay it's the offset from previous step end.
@@ -51,8 +47,6 @@ public class Step
 
 	@PlanningPin
 	boolean pinned;
-
-	private Duration humanResourceTestGroupDuration;
 
 	// No-arg constructor required for OptaPlanner
 	public Step() {}
@@ -142,8 +136,6 @@ public class Step
 
 	public ProjectId getProjectId() {return getId().getProjectId();}
 
-	public ResourceId getResourceId() {return resource.getId();}
-
 	public YearWeek getStartDateYearWeek()
 	{
 		return YearWeek.from(getStartDate());
@@ -204,4 +196,13 @@ public class Step
 	private Duration getDurationFromEndToDueDate() {return Duration.between(getEndDate(), dueDate);}
 
 	public int getDurationFromEndToDueDateInHoursAbs() {return Math.abs((int)getDurationFromEndToDueDate().toHours());}
+
+	public StepHumanResourceRequired computeStepHumanResourceRequired()
+	{
+		return StepHumanResourceRequired.builder()
+				.stepId(getId())
+				.requiredDuration(getHumanResourceTestGroupDuration())
+				.resource(getResource())
+				.build();
+	}
 }

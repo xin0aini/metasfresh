@@ -1,11 +1,13 @@
 package de.metas.calendar.plan_optimizer.domain;
 
+import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
 
 import java.time.Duration;
 
 @Value
+@Builder
 public class StepHumanResourceRequired
 {
 	@NonNull StepId stepId;

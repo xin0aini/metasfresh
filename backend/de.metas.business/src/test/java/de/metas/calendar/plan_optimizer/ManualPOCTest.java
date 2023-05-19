@@ -7,6 +7,7 @@ import com.google.common.collect.Multimaps;
 import de.metas.calendar.plan_optimizer.domain.Plan;
 import de.metas.calendar.plan_optimizer.domain.Resource;
 import de.metas.calendar.plan_optimizer.domain.Step;
+import de.metas.calendar.plan_optimizer.domain.StepHumanResourceRequired;
 import de.metas.calendar.plan_optimizer.domain.StepId;
 import de.metas.calendar.simulation.SimulationPlanId;
 import de.metas.common.util.time.SystemTime;
@@ -16,14 +17,11 @@ import de.metas.project.InternalPriority;
 import de.metas.project.ProjectId;
 import de.metas.project.workorder.resource.WOProjectResourceId;
 import de.metas.project.workorder.step.WOProjectStepId;
-import de.metas.resource.HumanResourceTestGroupId;
 import de.metas.resource.HumanResourceTestGroupRepository;
 import de.metas.resource.HumanResourceTestGroupService;
 import lombok.NonNull;
-import org.adempiere.model.InterfaceWrapperHelper;
 import org.adempiere.test.AdempiereTestHelper;
 import org.compiere.SpringContextHolder;
-import org.compiere.model.I_S_HumanResourceTestGroup;
 import org.junit.jupiter.api.Disabled;
 import org.optaplanner.core.api.solver.SolverFactory;
 
@@ -44,7 +42,7 @@ public class ManualPOCTest
 	private static final ProjectId PROJECT_ID2 = ProjectId.ofRepoId(2);
 	private static final AtomicInteger nextStepRepoId = new AtomicInteger(1);
 
-	public static void main(String[] args)
+	public static void main(final String[] args)
 	{
 		LogManager.setLoggerLevel(SimulationOptimizerTask.class, Level.DEBUG);
 		AdempiereTestHelper.get().init();
@@ -84,26 +82,27 @@ public class ManualPOCTest
 		return SolverFactory.create(SimulationOptimizerConfiguration.solverConfig(null, TERMINATION_SPENT_LIMIT));
 	}
 
-	private static Plan generateProblem(SimulationPlanId simulationId)
+	private static Plan generateProblem(final SimulationPlanId simulationId)
 	{
-		final HumanResourceTestGroupId groupId = createGroupId();
 		final ArrayList<Step> stepsList = new ArrayList<>();
 
 		// Project 1:
 		for (int i = 1; i <= 6; i++)
 		{
-			stepsList.add(Step.builder()
+			final Step step = Step.builder()
 					.id(StepId.builder()
 							.woProjectStepId(WOProjectStepId.ofRepoId(PROJECT_ID1, nextStepRepoId.getAndIncrement()))
 							.woProjectResourceId(WOProjectResourceId.ofRepoId(PROJECT_ID1, nextStepRepoId.get()))
 							.build())
 					.projectPriority(InternalPriority.MEDIUM)
-					.resource(resource(i, groupId))
+					.resource(resource(i))
 					.duration(Duration.ofHours(1))
 					.dueDate(LocalDateTime.parse("2023-08-01T15:00"))
 					.startDateMin(LocalDate.parse("2023-04-01").atStartOfDay())
 					.humanResourceTestGroupDuration(Duration.ofHours(i))
-					.build());
+					.build();
+
+			stepsList.add(step);
 		}
 
 		// Project 2:
@@ -140,17 +139,23 @@ public class ManualPOCTest
 		plan.setTimeZone(SystemTime.zoneId());
 		plan.setStepsList(stepsList);
 
+		final List<StepHumanResourceRequired> stepHumanResourceRequiredList = stepsList.stream()
+				.map(Step::computeStepHumanResourceRequired)
+				.collect(ImmutableList.toImmutableList());
+
+		plan.setStepHumanResourceRequiredList(stepHumanResourceRequiredList);
+
 		return plan;
 	}
 
-	private static Resource resource(int index, HumanResourceTestGroupId groupId) {return new Resource(resourceId(index), "R" + index, groupId);}
+	private static Resource resource(final int index) {return new Resource(resourceId(index), "R" + index, Duration.ofHours(10));}
 
 	@NonNull
 	private static ResourceId resourceId(final int index) {return ResourceId.ofRepoId(100 + index);}
 
 	private static void updatePreviousAndNextStep(final List<Step> steps)
 	{
-		ImmutableListMultimap<ProjectId, Step> stepsByProjectId = Multimaps.index(steps, Step::getProjectId);
+		final ImmutableListMultimap<ProjectId, Step> stepsByProjectId = Multimaps.index(steps, Step::getProjectId);
 
 		for (final ProjectId projectId : stepsByProjectId.keySet())
 		{
@@ -163,18 +168,5 @@ public class ManualPOCTest
 				step.setNextStep(i == lastIndex ? null : projectSteps.get(i + 1));
 			}
 		}
-	}
-
-	private static HumanResourceTestGroupId createGroupId()
-	{
-		final I_S_HumanResourceTestGroup record = InterfaceWrapperHelper.newInstance(I_S_HumanResourceTestGroup.class);
-
-		record.setGroupIdentifier("testIdentifier");
-		record.setName("test");
-		record.setDepartment("test");
-		record.setCapacityInHours(10);
-		InterfaceWrapperHelper.saveRecord(record);
-
-		return HumanResourceTestGroupId.ofRepoId(record.getS_HumanResourceTestGroup_ID());
 	}
 }

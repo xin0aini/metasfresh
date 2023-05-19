@@ -115,7 +115,7 @@ class SimulationOptimizerTask implements Runnable
 
 		final Solver<Plan> solver = this.solver = solverFactory.buildSolver();
 		solver.addEventListener(event -> {
-			final Plan solution = event.getNewBestSolution();
+			final Plan solution = event.getNewBestSolution(); //todo fp
 			solution.setFinalSolution(false);
 			solution.setTimeSpent(Duration.ofMillis(event.getTimeMillisSpent()));
 			onSolutionFound(solution);
@@ -173,7 +173,7 @@ class SimulationOptimizerTask implements Runnable
 	{
 		if (solution.getScore() != null)
 		{
-			solution.setScoreExplanation(getSolutionManager().explain(solution));
+			solution.setScoreExplanation(getSolutionManager().explain(solution)); //todo fp
 		}
 
 		logger.info("onSolutionFound: {}", solution);

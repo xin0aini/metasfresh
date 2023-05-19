@@ -1,8 +1,9 @@
 package de.metas.calendar.plan_optimizer.domain;
 
 import de.metas.calendar.plan_optimizer.solver.DelayStrengthComparator;
+import de.metas.calendar.plan_optimizer.solver.StartDateUpdatingVariableListener;
 import de.metas.i18n.BooleanWithReason;
-import de.metas.project.InternalPriority;
+import de.metas.product.ResourceId;
 import de.metas.project.ProjectId;
 import de.metas.util.time.DurationUtils;
 import lombok.Builder;
@@ -15,11 +16,13 @@ import org.optaplanner.core.api.domain.lookup.PlanningId;
 import org.optaplanner.core.api.domain.valuerange.CountableValueRange;
 import org.optaplanner.core.api.domain.valuerange.ValueRangeFactory;
 import org.optaplanner.core.api.domain.valuerange.ValueRangeProvider;
+import org.optaplanner.core.api.domain.variable.InverseRelationShadowVariable;
 import org.optaplanner.core.api.domain.variable.PlanningVariable;
+import org.optaplanner.core.api.domain.variable.ShadowVariable;
 
-import javax.annotation.Nullable;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @PlanningEntity
 @Setter
@@ -28,22 +31,26 @@ import java.time.LocalDateTime;
 public class Step
 {
 	@NonNull @PlanningId private StepId id;
-	@Nullable private Step previousStep;
-	@Nullable private Step nextStep;
-	@NonNull InternalPriority projectPriority;
 	@NonNull private Resource resource;
 	@NonNull private Duration duration;
 	@NonNull private LocalDateTime startDateMin;
 	@NonNull private LocalDateTime dueDate;
 	@NonNull private Duration humanResourceTestGroupDuration;
+	@NonNull private Integer seqNo;
 
 	/**
 	 * Delay it's the offset from previous step end.
 	 * The delay is measured in {@link Plan#PLANNING_TIME_PRECISION}
 	 */
-	public static final String FIELD_delay = "delay";
+	public static final String FIELD_startDate = "startDate";
+
+	// Shadow variables
+	@InverseRelationShadowVariable(sourceVariableName = "steps")
+	private Project project;
+	@ShadowVariable(variableListenerClass = StartDateUpdatingVariableListener.class,
+			sourceEntityClass = Project.class, sourceVariableName = "steps")
 	@PlanningVariable(strengthComparatorClass = DelayStrengthComparator.class)
-	private Integer delay;
+	private LocalDateTime startDate; // in hours
 
 	@PlanningPin
 	boolean pinned;
@@ -54,28 +61,22 @@ public class Step
 	@Builder
 	private Step(
 			@NonNull final StepId id,
-			@Nullable final Step previousStep,
-			@Nullable final Step nextStep,
-			@NonNull final InternalPriority projectPriority,
 			@NonNull final Resource resource,
 			@NonNull final Duration duration,
 			@NonNull final LocalDateTime startDateMin,
 			@NonNull final LocalDateTime dueDate,
 			@NonNull final Duration humanResourceTestGroupDuration,
-			final int delay,
+			@NonNull final Integer seqNo,
 			final boolean pinned)
 	{
 		this.id = id;
-		this.previousStep = previousStep;
-		this.nextStep = nextStep;
-		this.projectPriority = projectPriority;
 		this.resource = resource;
 		this.duration = duration;
 		this.dueDate = dueDate;
 		this.startDateMin = startDateMin;
-		this.delay = delay;
 		this.pinned = pinned;
 		this.humanResourceTestGroupDuration = humanResourceTestGroupDuration;
+		this.seqNo = seqNo;
 	}
 
 	@Override
@@ -86,28 +87,19 @@ public class Step
 				+ " (" + duration + ")"
 				+ ": dueDate=" + dueDate
 				+ ", startDateMin=" + startDateMin
-				+ ", delay=" + getDelayAsDuration() + "(max. " + computeDelayMax() + ")"
 				+ ", " + resource
 				+ ", " + getProjectId()
 				+ ", humanResourceTestGroupDuration=" + getHumanResourceTestGroupDuration()
-				+ ", ID=" + (id != null ? id.getWoProjectResourceId().getRepoId() : "?");
+				+ ", ID=" + id.getWoProjectResourceId().getRepoId();
 	}
 
 	public BooleanWithReason checkProblemFactsValid()
 	{
-		if (startDateMin == null)
-		{
-			return BooleanWithReason.falseBecause("StartDateMin not set");
-		}
-		if (dueDate == null)
-		{
-			return BooleanWithReason.falseBecause("DueDate not set");
-		}
 		if (!startDateMin.isBefore(dueDate))
 		{
 			return BooleanWithReason.falseBecause("StartDateMin shall be before DueDate");
 		}
-		if (duration == null || duration.getSeconds() <= 0)
+		if (duration.getSeconds() <= 0)
 		{
 			return BooleanWithReason.falseBecause("Duration must be set and must be positive");
 		}
@@ -136,31 +128,20 @@ public class Step
 
 	public ProjectId getProjectId() {return getId().getProjectId();}
 
+	public ResourceId getResourceId() {return resource.getId();}
+
 	public YearWeek getStartDateYearWeek()
 	{
 		return YearWeek.from(getStartDate());
 	}
 
-	private int getDelayAsInt() {return delay != null ? delay : 0;}
 
-	private Duration getDelayAsDuration() {return Duration.of(getDelayAsInt(), Plan.PLANNING_TIME_PRECISION);}
-
-	public LocalDateTime getStartDate()
-	{
-		final Duration delayDuration = getDelayAsDuration();
-		if (previousStep == null)
-		{
-			return startDateMin.plus(delayDuration);
-		}
-		else
-		{
-			return previousStep.getEndDate().plus(delayDuration);
-		}
-	}
-
+	@NonNull
 	public LocalDateTime getEndDate()
 	{
-		return getStartDate().plus(duration);
+		return Optional.ofNullable(startDate)
+				.map(startDate -> startDate.plus(duration))
+				.orElseGet(() -> getStartDateMin().plus(duration));
 	}
 
 	@SuppressWarnings("BooleanMethodIsAlwaysInverted")

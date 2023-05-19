@@ -45,15 +45,15 @@ public class PlanConstraintProvider implements ConstraintProvider
 		};
 	}
 
-	Constraint resourceConflict(final ConstraintFactory constraintFactory)
-	{
-		return constraintFactory.forEachUniquePair(
-						Step.class,
-						Joiners.equal(Step::getResource),
-						stepsOverlapping())
-				.penalize(ONE_HARD, PlanConstraintProvider::getOverlappingDuration)
-				.asConstraint("Resource conflict");
-	}
+	// Constraint resourceConflict(final ConstraintFactory constraintFactory)
+	// {
+	// 	return constraintFactory.forEachUniquePair(
+	// 					Step.class,
+	// 					Joiners.equal(Step::getResource),
+	// 					stepsOverlapping())
+	// 			.penalize(ONE_HARD, PlanConstraintProvider::getOverlappingDuration)
+	// 			.asConstraint("Resource conflict");
+	// }
 
 	private static BiJoiner<Step, Step> stepsOverlapping() {return Joiners.overlapping(Step::getStartDate, Step::getEndDate);}
 
@@ -93,7 +93,7 @@ public class PlanConstraintProvider implements ConstraintProvider
 						(resource, yearWeek, allocationsAgg) -> allocationsAgg.computePenaltyWeight(resource.getHumanResourceWeeklyCapacityInHours()))
 				.asConstraint("Available human resource test group capacity");
 	}
-
+/*
 	Constraint delayIsMinimum(final ConstraintFactory constraintFactory)
 	{
 		return constraintFactory.forEach(Step.class)
@@ -172,5 +172,5 @@ public class PlanConstraintProvider implements ConstraintProvider
 		final LocalDateTime overlappingStart = (step1Start.isAfter(step2Start)) ? step1Start : step2Start; // MAX
 		final LocalDateTime overlappingEnd = (step1End.isBefore(step2End)) ? step1End : step2End; // MIN
 		return (int)Plan.PLANNING_TIME_PRECISION.between(overlappingStart, overlappingEnd);
-	}
+	}*/
 }

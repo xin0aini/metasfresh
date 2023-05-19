@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Multimaps;
 import de.metas.calendar.plan_optimizer.domain.Plan;
+import de.metas.calendar.plan_optimizer.domain.Project;
 import de.metas.calendar.plan_optimizer.domain.Resource;
 import de.metas.calendar.plan_optimizer.domain.Step;
 import de.metas.calendar.plan_optimizer.domain.StepHumanResourceRequired;
@@ -94,16 +95,22 @@ public class ManualPOCTest
 							.woProjectStepId(WOProjectStepId.ofRepoId(PROJECT_ID1, nextStepRepoId.getAndIncrement()))
 							.woProjectResourceId(WOProjectResourceId.ofRepoId(PROJECT_ID1, nextStepRepoId.get()))
 							.build())
-					.projectPriority(InternalPriority.MEDIUM)
 					.resource(resource(1))
 					.duration(Duration.ofHours(1))
 					.dueDate(LocalDateTime.parse("2023-08-01T15:00"))
 					.startDateMin(LocalDate.parse("2023-04-01").atStartOfDay())
 					.humanResourceTestGroupDuration(Duration.ofHours(6))
+					.seqNo(i * 10)
 					.build();
 
 			stepsList.add(step);
 		}
+
+		final Project project1 = Project.builder()
+				.projectId(PROJECT_ID1)
+				.projectPriority(InternalPriority.MEDIUM)
+				.steps(stepsList)
+				.build();
 
 		// Project 2:
 		// for (int i = 1; i <= 10; i++)

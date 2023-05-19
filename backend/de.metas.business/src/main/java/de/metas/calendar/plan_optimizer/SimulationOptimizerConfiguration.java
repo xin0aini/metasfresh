@@ -67,9 +67,9 @@ public class SimulationOptimizerConfiguration extends OptaPlannerAutoConfigurati
 		final ConstructionHeuristicPhaseConfig constructionHeuristicPhaseConfig = new ConstructionHeuristicPhaseConfig();
 		constructionHeuristicPhaseConfig.setConstructionHeuristicType(ConstructionHeuristicType.FIRST_FIT);
 
-		final ChangeMoveSelectorConfig moveSelectorConfig = new ChangeMoveSelectorConfig();
+		final ChangeMoveSelectorConfig moveSelectorConfig = new ChangeMoveSelectorConfig(); //todo fp
 		final ValueSelectorConfig valueSelectorConfig = new ValueSelectorConfig();
-		valueSelectorConfig.setVariableName(Step.FIELD_delay);
+		valueSelectorConfig.setVariableName(Step.FIELD_startDate);
 		moveSelectorConfig.setValueSelectorConfig(valueSelectorConfig);
 
 		final LocalSearchPhaseConfig localSearchPhaseConfig = new LocalSearchPhaseConfig();

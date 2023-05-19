@@ -7,13 +7,13 @@ import org.optaplanner.core.api.domain.solution.PlanningEntityCollectionProperty
 import org.optaplanner.core.api.domain.solution.PlanningScore;
 import org.optaplanner.core.api.domain.solution.PlanningSolution;
 import org.optaplanner.core.api.domain.solution.ProblemFactCollectionProperty;
+import org.optaplanner.core.api.domain.valuerange.ValueRangeProvider;
 import org.optaplanner.core.api.score.ScoreExplanation;
 import org.optaplanner.core.api.score.buildin.bendable.BendableScore;
 
 import java.time.Duration;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
 
 @PlanningSolution
@@ -26,7 +26,14 @@ public class Plan
 	private ZoneId timeZone;
 
 	@PlanningEntityCollectionProperty
-	private ArrayList<Step> stepsList;
+	private List<Project> projectList;
+
+	@ProblemFactCollectionProperty
+	private List<Resource> resourceList;
+
+	@ValueRangeProvider
+    @ProblemFactCollectionProperty
+	private List<Step> stepsList;
 
 	@ProblemFactCollectionProperty
 	private List<StepHumanResourceRequired> stepHumanResourceRequiredList;

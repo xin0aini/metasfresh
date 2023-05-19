@@ -2,6 +2,7 @@ package de.metas.calendar.plan_optimizer.solver;
 
 import de.metas.calendar.plan_optimizer.domain.Plan;
 import de.metas.calendar.plan_optimizer.domain.Step;
+import de.metas.calendar.plan_optimizer.domain.StepHumanResourceAllocationsAggregate;
 import de.metas.calendar.plan_optimizer.domain.StepHumanResourceRequired;
 import de.metas.project.InternalPriority;
 import de.metas.util.Check;
@@ -33,8 +34,8 @@ public class PlanConstraintProvider implements ConstraintProvider
 		return new Constraint[] {
 				// Hard:
 				// resourceConflict(constraintFactory),
-				startDateMin(constraintFactory),
-				dueDate(constraintFactory),
+				// startDateMin(constraintFactory),
+				// dueDate(constraintFactory),
 				humanResourceAvailableCapacity(constraintFactory),
 				// Soft:
 				// stepsNotRespectingProjectPriority(constraintFactory),
@@ -80,36 +81,18 @@ public class PlanConstraintProvider implements ConstraintProvider
 				.groupBy(
 						(stepReq, step) -> stepReq.getResource(),
 						(stepReq, step) -> step.getStartDateYearWeek(),
-						ConstraintCollectors.sum((stepReq, step) -> stepReq.getRequiredDurationInHours())
+						ConstraintCollectors.sum(
+								StepHumanResourceAllocationsAggregate::of,
+								StepHumanResourceAllocationsAggregate.ZERO,
+								StepHumanResourceAllocationsAggregate::add,
+								StepHumanResourceAllocationsAggregate::subtract
+						)
 				)
-				.filter((resource, yearWeek, totalRequirement) -> totalRequirement > resource.getHumanResourceWeeklyCapacityInHours())
+				.filter((resource, yearWeek, allocationsAgg) -> allocationsAgg.isWeeklyCapacityExceeded(resource.getHumanResourceWeeklyCapacityInHours()))
 				.penalize(ONE_HARD_2,
-						(resource, yearWeek, totalRequirement) -> totalRequirement - resource.getHumanResourceWeeklyCapacityInHours())
+						(resource, yearWeek, allocationsAgg) -> allocationsAgg.computePenaltyWeight(resource.getHumanResourceWeeklyCapacityInHours()))
 				.asConstraint("Available human resource test group capacity");
-
-		// return constraintFactory.forEach(Step.class)
-		// 		.filter(step -> step.getResource().getHumanResourceTestGroupId() != null)
-		// 		.filter(step -> !step.getHumanResourceTestGroupDuration().isZero())
-		// 		.groupBy(ConstraintCollectors.sum(
-		// 				StepRequiredCapacity::ofStep,
-		// 				StepRequiredCapacity.ZERO,
-		// 				StepRequiredCapacity::add,
-		// 				StepRequiredCapacity::subtract))
-		// 		.penalize(ONE_HARD_2, this::computePenaltyWeight_availableCapacity)
-		// 		.asConstraint("Available human resource test group capacity");
 	}
-
-	// private int computePenaltyWeight_availableCapacity(final StepRequiredCapacity requiredCapacity) //todo fp
-	// {
-	// 	final Set<HumanResourceTestGroupId> ids = requiredCapacity.getMap().keySet()
-	// 			.stream()
-	// 			.map(ResourceGroupYearWeek::getGroupId)
-	// 			.collect(ImmutableSet.toImmutableSet());
-	//
-	// 	final HumanResourceAvailableCapacity humanResourceAvailableCapacity = HumanResourceAvailableCapacity.of(humanResourceTestGroupService.getByIds(ids));
-	// 	humanResourceAvailableCapacity.reserveCapacity(requiredCapacity);
-	// 	return humanResourceAvailableCapacity.getOverReservedCapacity().intValue();
-	// }
 
 	Constraint delayIsMinimum(final ConstraintFactory constraintFactory)
 	{

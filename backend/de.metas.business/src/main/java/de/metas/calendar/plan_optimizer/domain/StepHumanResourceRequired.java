@@ -3,6 +3,7 @@ package de.metas.calendar.plan_optimizer.domain;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Value;
+import org.optaplanner.core.api.domain.lookup.PlanningId;
 
 import java.time.Duration;
 
@@ -10,6 +11,7 @@ import java.time.Duration;
 @Builder
 public class StepHumanResourceRequired
 {
+	@PlanningId
 	@NonNull StepId stepId;
 	@NonNull Resource resource;
 	@NonNull Duration requiredDuration;

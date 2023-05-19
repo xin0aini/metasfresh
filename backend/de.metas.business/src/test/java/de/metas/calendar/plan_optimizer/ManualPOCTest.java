@@ -87,7 +87,7 @@ public class ManualPOCTest
 		final ArrayList<Step> stepsList = new ArrayList<>();
 
 		// Project 1:
-		for (int i = 1; i <= 6; i++)
+		for (int i = 1; i <= 3; i++)
 		{
 			final Step step = Step.builder()
 					.id(StepId.builder()
@@ -95,11 +95,11 @@ public class ManualPOCTest
 							.woProjectResourceId(WOProjectResourceId.ofRepoId(PROJECT_ID1, nextStepRepoId.get()))
 							.build())
 					.projectPriority(InternalPriority.MEDIUM)
-					.resource(resource(i))
+					.resource(resource(1))
 					.duration(Duration.ofHours(1))
 					.dueDate(LocalDateTime.parse("2023-08-01T15:00"))
 					.startDateMin(LocalDate.parse("2023-04-01").atStartOfDay())
-					.humanResourceTestGroupDuration(Duration.ofHours(i))
+					.humanResourceTestGroupDuration(Duration.ofHours(6))
 					.build();
 
 			stepsList.add(step);

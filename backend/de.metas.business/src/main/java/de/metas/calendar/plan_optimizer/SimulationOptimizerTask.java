@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 
@@ -137,8 +138,8 @@ class SimulationOptimizerTask implements Runnable
 	public void run()
 	{
 		// FIXME debugging
-		LogManager.setLoggerLevel("org.drools", Level.INFO);
-		LogManager.setLoggerLevel("org.optaplanner", Level.INFO);
+		LogManager.setLoggerLevel("org.drools", Level.ALL);
+		LogManager.setLoggerLevel("org.optaplanner", Level.ALL);
 
 		simulationOptimizerStatusDispatcher.notifyStarted(simulationId);
 
@@ -161,7 +162,7 @@ class SimulationOptimizerTask implements Runnable
 
 	private static void prepareProblem(final Plan plan)
 	{
-		final ArrayList<Step> stepsList = plan.getStepsList();
+		final List<Step> stepsList = plan.getStepList();
 		for (int i = 0, lastIndex = stepsList.size() - 1; i <= lastIndex; i++)
 		{
 			final Step step = stepsList.get(i);

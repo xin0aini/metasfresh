@@ -35,10 +35,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public class DatabasePlanLoaderInstance
 {
@@ -101,20 +101,20 @@ public class DatabasePlanLoaderInstance
 				.collect(ImmutableList.toImmutableList());
 
 		final List<Step> optaplannerSteps = optaplannerProjects.stream()
-				.map(Project::getSteps)
+				.map(Project::getStepList)
 				.flatMap(List::stream)
 				.collect(ImmutableList.toImmutableList());
 
-		final List<Resource> optaplannerResources = optaplannerSteps.stream()
+		final Set<Resource> optaplannerResources = optaplannerSteps.stream()
 				.map(Step::getResource)
-				.collect(ImmutableList.toImmutableList());
+				.collect(ImmutableSet.toImmutableSet());
 
 		final Plan optaPlannerPlan = new Plan();
 		optaPlannerPlan.setSimulationId(simulationId);
 		optaPlannerPlan.setTimeZone(timeZone);
 		optaPlannerPlan.setProjectList(optaplannerProjects);
-		optaPlannerPlan.setStepsList(optaplannerSteps);
-		optaPlannerPlan.setResourceList(optaplannerResources);
+		optaPlannerPlan.setStepList(optaplannerSteps);
+		optaPlannerPlan.setResourceList(ImmutableList.copyOf(optaplannerResources));
 
 		return optaPlannerPlan;
 	}
@@ -125,48 +125,59 @@ public class DatabasePlanLoaderInstance
 		return Project.builder()
 				.projectId(woProject.getProjectId())
 				.projectPriority(CoalesceUtil.coalesceNotNull(woProject.getInternalPriority(), InternalPriority.MEDIUM))
-				.steps(loadStepsFromWOProjectId(woProject))
+				.stepList(loadStepsFromWOProjectId(woProject))
 				.build();
 	}
 
 	@NonNull
 	private List<Step> loadStepsFromWOProjectId(@NonNull final WOProject woProject)
 	{
-		return stepsByProjectId.getByProjectId(woProject.getProjectId()).toOrderedList()
-				.stream()
-				.map(step -> toOptaplannerSteps(step, woProject))
-				.flatMap(List::stream)
-				.collect(ImmutableList.toImmutableList());
-	}
+		final ImmutableList.Builder<Step> stepListBuilder = ImmutableList.builder();
+		Step prevStep = null;
 
-	final List<Step> toOptaplannerSteps(@NonNull final WOProjectStep woStep, @NonNull final WOProject woProject)
-	{
-		final LocalDateTime startDateMin = Optional.ofNullable(woStep.getDeliveryDate())
-				.map(this::toLocalDateTime)
-				.orElse(extractProjectStartDate(woProject));
-
-		if (startDateMin == null)
+		for (final WOProjectStep woStep : stepsByProjectId.getByProjectId(woProject.getProjectId()).toOrderedList())
 		{
-			logger.warn("Ignore step because StartDateMin could not be determined: {}", woStep);
-			return ImmutableList.of();
+			final LocalDateTime startDateMin = Optional.ofNullable(woStep.getDeliveryDate())
+					.map(this::toLocalDateTime)
+					.orElse(extractProjectStartDate(woProject));
+
+			if (startDateMin == null)
+			{
+				logger.warn("Ignore step because StartDateMin could not be determined: {}", woStep);
+				continue;
+			}
+
+			final LocalDateTime dueDate = CoalesceUtil.optionalOfFirstNonNull(woStep.getWoDueDate(), woProject.getDateFinish())
+					.map(this::toLocalDateTime)
+					.orElse(null);
+			if (dueDate == null)
+			{
+				logger.warn("Ignore step because due date could not be determined: {}", woStep);
+				continue;
+			}
+
+			for (final WOProjectResource woProjectResource : resources.getByStepId(woStep.getWoProjectStepId()))
+			{
+				final Optional<Step> optaplannerStepOpt = fromWOStepResource(woStep, woProjectResource, startDateMin, dueDate, prevStep);
+
+				if (!optaplannerStepOpt.isPresent())
+				{
+					continue;
+				}
+
+				final Step step = optaplannerStepOpt.get();
+
+				if(prevStep != null)
+				{
+					prevStep.setNextStep(step);
+				}
+
+				stepListBuilder.add(step);
+				prevStep = step;
+			}
 		}
 
-		final LocalDateTime dueDate = CoalesceUtil.optionalOfFirstNonNull(woStep.getWoDueDate(), woProject.getDateFinish())
-				.map(this::toLocalDateTime)
-				.orElse(null);
-
-		if (dueDate == null)
-		{
-			logger.warn("Ignore step because due date could not be determined: {}", woStep);
-			return ImmutableList.of();
-		}
-
-		return resources.getByStepId(woStep.getWoProjectStepId())
-				.stream()
-				.map(woStepResourceOrig -> fromWOStepResource(woStep, woStepResourceOrig, startDateMin, dueDate))
-				.filter(Optional::isPresent)
-				.map(Optional::get)
-				.collect(ImmutableList.toImmutableList());
+		return stepListBuilder.build();
 	}
 
 	@NonNull
@@ -188,7 +199,8 @@ public class DatabasePlanLoaderInstance
 			@NonNull final WOProjectStep woStep,
 			@NonNull final WOProjectResource woStepResourceOrig,
 			@NonNull final LocalDateTime startDateMin,
-			@NonNull final LocalDateTime dueDate)
+			@NonNull final LocalDateTime dueDate,
+			@Nullable final Step prevStep)
 	{
 		Duration duration = woStepResourceOrig.getDuration();
 		if (duration.toSeconds() <= 0)
@@ -229,6 +241,7 @@ public class DatabasePlanLoaderInstance
 				.pinned(pinned)
 				.humanResourceTestGroupDuration(humanResourceTestGroupDuration)
 				.seqNo(woStep.getSeqNo())
+				.previousStep(prevStep)
 				.build();
 
 		final BooleanWithReason valid = step.checkProblemFactsValid();
@@ -236,6 +249,12 @@ public class DatabasePlanLoaderInstance
 		{
 			logger.info("Skip invalid woStep because `{}`: {}", valid.getReasonAsString(), woStep);
 			return Optional.empty();
+		}
+
+		if (prevStep != null)
+		{
+			prevStep.setNextStep(step);
+			step.setPreviousStep(prevStep);
 		}
 
 		return Optional.of(step);

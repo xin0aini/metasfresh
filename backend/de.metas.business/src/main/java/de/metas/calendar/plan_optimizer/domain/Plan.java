@@ -25,18 +25,15 @@ public class Plan
 	private SimulationPlanId simulationId;
 	private ZoneId timeZone;
 
-	@PlanningEntityCollectionProperty
-	private List<Project> projectList;
-
 	@ProblemFactCollectionProperty
 	private List<Resource> resourceList;
 
 	@ValueRangeProvider
     @ProblemFactCollectionProperty
-	private List<Step> stepsList;
+	private List<Step> stepList;
 
-	@ProblemFactCollectionProperty
-	private List<StepHumanResourceRequired> stepHumanResourceRequiredList;
+	@PlanningEntityCollectionProperty
+	private List<Project> projectList;
 
 	@PlanningScore(bendableHardLevelsSize = PlanConstraintProvider.HARD_LEVELS_SIZE, bendableSoftLevelsSize = PlanConstraintProvider.SOFT_LEVELS_SIZE)
 	private BendableScore score;
@@ -51,9 +48,9 @@ public class Plan
 		final StringBuilder sb = new StringBuilder();
 		sb.append("\nsimulationId: ").append(simulationId);
 		sb.append("\nPlan score: ").append(score).append(", Time spent: ").append(timeSpent).append(", IsFinalSolution=").append(isFinalSolution);
-		if (stepsList != null && !stepsList.isEmpty())
+		if (stepList != null && !stepList.isEmpty())
 		{
-			stepsList.forEach(step -> sb.append("\n").append(step));
+			stepList.forEach(step -> sb.append("\n").append(step));
 		}
 
 		if (scoreExplanation != null)

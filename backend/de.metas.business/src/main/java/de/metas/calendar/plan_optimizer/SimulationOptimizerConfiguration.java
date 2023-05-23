@@ -2,17 +2,13 @@ package de.metas.calendar.plan_optimizer;
 
 import com.google.common.annotations.VisibleForTesting;
 import de.metas.calendar.plan_optimizer.domain.Plan;
+import de.metas.calendar.plan_optimizer.domain.Project;
 import de.metas.calendar.plan_optimizer.domain.Step;
 import de.metas.calendar.plan_optimizer.solver.PlanConstraintProvider;
 import de.metas.util.Services;
 import lombok.NonNull;
 import org.adempiere.service.ISysConfigBL;
-import org.optaplanner.core.config.constructionheuristic.ConstructionHeuristicPhaseConfig;
-import org.optaplanner.core.config.constructionheuristic.ConstructionHeuristicType;
-import org.optaplanner.core.config.heuristic.selector.move.generic.ChangeMoveSelectorConfig;
-import org.optaplanner.core.config.heuristic.selector.value.ValueSelectorConfig;
-import org.optaplanner.core.config.localsearch.LocalSearchPhaseConfig;
-import org.optaplanner.core.config.localsearch.LocalSearchType;
+import org.optaplanner.core.config.solver.EnvironmentMode;
 import org.optaplanner.core.config.solver.SolverConfig;
 import org.optaplanner.spring.boot.autoconfigure.OptaPlannerAutoConfiguration;
 import org.optaplanner.spring.boot.autoconfigure.config.OptaPlannerProperties;
@@ -64,24 +60,25 @@ public class SimulationOptimizerConfiguration extends OptaPlannerAutoConfigurati
 			@Nullable final ClassLoader classLoader,
 			@NonNull final Duration terminationSpentLimit)
 	{
-		final ConstructionHeuristicPhaseConfig constructionHeuristicPhaseConfig = new ConstructionHeuristicPhaseConfig();
-		constructionHeuristicPhaseConfig.setConstructionHeuristicType(ConstructionHeuristicType.FIRST_FIT);
-
-		final ChangeMoveSelectorConfig moveSelectorConfig = new ChangeMoveSelectorConfig(); //todo fp
-		final ValueSelectorConfig valueSelectorConfig = new ValueSelectorConfig();
-		valueSelectorConfig.setVariableName(Step.FIELD_startDate);
-		moveSelectorConfig.setValueSelectorConfig(valueSelectorConfig);
-
-		final LocalSearchPhaseConfig localSearchPhaseConfig = new LocalSearchPhaseConfig();
-		localSearchPhaseConfig.setMoveSelectorConfig(moveSelectorConfig);
-		localSearchPhaseConfig.setLocalSearchType(LocalSearchType.TABU_SEARCH);
+		// final ConstructionHeuristicPhaseConfig constructionHeuristicPhaseConfig = new ConstructionHeuristicPhaseConfig();
+		// constructionHeuristicPhaseConfig.setConstructionHeuristicType(ConstructionHeuristicType.FIRST_FIT);
+		//
+		// final ChangeMoveSelectorConfig moveSelectorConfig = new ChangeMoveSelectorConfig(); //todo fp
+		// final ValueSelectorConfig valueSelectorConfig = new ValueSelectorConfig();
+		// valueSelectorConfig.setVariableName(Step.FIELD_startDate);
+		// moveSelectorConfig.setValueSelectorConfig(valueSelectorConfig);
+		//
+		// final LocalSearchPhaseConfig localSearchPhaseConfig = new LocalSearchPhaseConfig();
+		// localSearchPhaseConfig.setMoveSelectorConfig(moveSelectorConfig);
+		// localSearchPhaseConfig.setLocalSearchType(LocalSearchType.TABU_SEARCH);
 
 		return new SolverConfig(classLoader)
+				.withEnvironmentMode(EnvironmentMode.FULL_ASSERT)
 				.withSolutionClass(Plan.class)
-				.withEntityClasses(Step.class)
+				.withEntityClasses(Step.class, Project.class)
 				.withConstraintProviderClass(PlanConstraintProvider.class)
-				.withTerminationSpentLimit(terminationSpentLimit)
-				.withPhases(constructionHeuristicPhaseConfig, localSearchPhaseConfig);
+				.withTerminationSpentLimit(terminationSpentLimit);
+				// .withPhases(constructionHeuristicPhaseConfig);
 	}
 
 	private Duration getTerminationSpentLimit()

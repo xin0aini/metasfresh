@@ -2,13 +2,11 @@ package de.metas.calendar.plan_optimizer;
 
 import ch.qos.logback.classic.Level;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.collect.Multimaps;
+import com.google.common.collect.ImmutableSet;
 import de.metas.calendar.plan_optimizer.domain.Plan;
 import de.metas.calendar.plan_optimizer.domain.Project;
 import de.metas.calendar.plan_optimizer.domain.Resource;
 import de.metas.calendar.plan_optimizer.domain.Step;
-import de.metas.calendar.plan_optimizer.domain.StepHumanResourceRequired;
 import de.metas.calendar.plan_optimizer.domain.StepId;
 import de.metas.calendar.simulation.SimulationPlanId;
 import de.metas.common.util.time.SystemTime;
@@ -32,6 +30,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -109,7 +108,7 @@ public class ManualPOCTest
 		final Project project1 = Project.builder()
 				.projectId(PROJECT_ID1)
 				.projectPriority(InternalPriority.MEDIUM)
-				.steps(stepsList)
+				.stepList(stepsList)
 				.build();
 
 		// Project 2:
@@ -139,18 +138,18 @@ public class ManualPOCTest
 		// 			step.setPinned(true);
 		// 		});
 
-		updatePreviousAndNextStep(stepsList);
+		// updatePreviousAndNextStep(stepsList);
 
 		final Plan plan = new Plan();
 		plan.setSimulationId(simulationId);
 		plan.setTimeZone(SystemTime.zoneId());
-		plan.setStepsList(stepsList);
+		plan.setProjectList(ImmutableList.of(project1));
+		plan.setStepList(stepsList);
 
-		final List<StepHumanResourceRequired> stepHumanResourceRequiredList = stepsList.stream()
-				.map(Step::computeStepHumanResourceRequired)
-				.collect(ImmutableList.toImmutableList());
-
-		plan.setStepHumanResourceRequiredList(stepHumanResourceRequiredList);
+		final Set<Resource> resourceList = stepsList.stream()
+				.map(Step::getResource)
+				.collect(ImmutableSet.toImmutableSet());
+		plan.setResourceList(List.copyOf(resourceList));
 
 		return plan;
 	}
@@ -159,21 +158,4 @@ public class ManualPOCTest
 
 	@NonNull
 	private static ResourceId resourceId(final int index) {return ResourceId.ofRepoId(100 + index);}
-
-	private static void updatePreviousAndNextStep(final List<Step> steps)
-	{
-		final ImmutableListMultimap<ProjectId, Step> stepsByProjectId = Multimaps.index(steps, Step::getProjectId);
-
-		for (final ProjectId projectId : stepsByProjectId.keySet())
-		{
-			final ImmutableList<Step> projectSteps = stepsByProjectId.get(projectId);
-
-			for (int i = 0, lastIndex = projectSteps.size() - 1; i <= lastIndex; i++)
-			{
-				final Step step = projectSteps.get(i);
-				step.setPreviousStep(i == 0 ? null : projectSteps.get(i - 1));
-				step.setNextStep(i == lastIndex ? null : projectSteps.get(i + 1));
-			}
-		}
-	}
 }

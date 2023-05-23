@@ -25,21 +25,38 @@ package de.metas.calendar.plan_optimizer.domain;
 import de.metas.project.InternalPriority;
 import de.metas.project.ProjectId;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.Value;
 import org.optaplanner.core.api.domain.entity.PlanningEntity;
+import org.optaplanner.core.api.domain.lookup.PlanningId;
 import org.optaplanner.core.api.domain.variable.PlanningListVariable;
 
 import java.util.List;
 
-@Value
-@Builder
 @PlanningEntity
+@Setter
+@Getter
 public class Project
 {
-	@NonNull ProjectId projectId;
+	@PlanningId @NonNull ProjectId projectId;
 	@NonNull InternalPriority projectPriority;
 
 	@PlanningListVariable
-	@NonNull List<Step> steps;
+	@NonNull List<Step> stepList;
+
+	// No-arg constructor required for OptaPlanner
+	public Project() {}
+
+	@Builder
+	public Project(
+			@NonNull final ProjectId projectId,
+			@NonNull final InternalPriority projectPriority,
+			@NonNull final List<Step> stepList)
+	{
+		this.projectId = projectId;
+		this.projectPriority = projectPriority;
+		this.stepList = stepList;
+	}
 }

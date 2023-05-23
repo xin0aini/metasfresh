@@ -75,7 +75,7 @@ public class DatabasePlanLoaderAndSaver implements PlanLoaderAndSaver
 		final SimulationPlanId simulationId = solution.getSimulationId();
 		final ZoneId timeZone = solution.getTimeZone();
 
-		final ImmutableSet<ProjectId> projectIds = solution.getStepsList()
+		final ImmutableSet<ProjectId> projectIds = solution.getStepList()
 				.stream()
 				.map(Step::getProjectId)
 				.collect(ImmutableSet.toImmutableSet());
@@ -94,7 +94,7 @@ public class DatabasePlanLoaderAndSaver implements PlanLoaderAndSaver
 				.currentSimulationPlan(woProjectSimulationService.getSimulationPlanById(simulationId))
 				.build();
 
-		for (final Step optaPlannerStep : solution.getStepsList())
+		for (final Step optaPlannerStep : solution.getStepList())
 		{
 			if (optaPlannerStep.getStartDate() == null || optaPlannerStep.getEndDate() == null)
 			{

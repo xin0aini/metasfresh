@@ -1,6 +1,5 @@
 package de.metas.calendar.plan_optimizer.domain;
 
-import de.metas.calendar.plan_optimizer.solver.DelayStrengthComparator;
 import de.metas.calendar.plan_optimizer.solver.StartDateUpdatingVariableListener;
 import de.metas.i18n.BooleanWithReason;
 import de.metas.product.ResourceId;
@@ -15,11 +14,12 @@ import org.optaplanner.core.api.domain.entity.PlanningPin;
 import org.optaplanner.core.api.domain.lookup.PlanningId;
 import org.optaplanner.core.api.domain.valuerange.CountableValueRange;
 import org.optaplanner.core.api.domain.valuerange.ValueRangeFactory;
-import org.optaplanner.core.api.domain.valuerange.ValueRangeProvider;
 import org.optaplanner.core.api.domain.variable.InverseRelationShadowVariable;
-import org.optaplanner.core.api.domain.variable.PlanningVariable;
+import org.optaplanner.core.api.domain.variable.NextElementShadowVariable;
+import org.optaplanner.core.api.domain.variable.PreviousElementShadowVariable;
 import org.optaplanner.core.api.domain.variable.ShadowVariable;
 
+import javax.annotation.Nullable;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -37,6 +37,8 @@ public class Step
 	@NonNull private LocalDateTime dueDate;
 	@NonNull private Duration humanResourceTestGroupDuration;
 	@NonNull private Integer seqNo;
+	@Nullable private Step previousStep;
+	@Nullable private Step nextStep;
 
 	/**
 	 * Delay it's the offset from previous step end.
@@ -45,11 +47,10 @@ public class Step
 	public static final String FIELD_startDate = "startDate";
 
 	// Shadow variables
-	@InverseRelationShadowVariable(sourceVariableName = "steps")
+	@InverseRelationShadowVariable(sourceVariableName = "stepList")
 	private Project project;
 	@ShadowVariable(variableListenerClass = StartDateUpdatingVariableListener.class,
-			sourceEntityClass = Project.class, sourceVariableName = "steps")
-	@PlanningVariable(strengthComparatorClass = DelayStrengthComparator.class)
+			sourceEntityClass = Project.class, sourceVariableName = "stepList")
 	private LocalDateTime startDate; // in hours
 
 	@PlanningPin
@@ -67,6 +68,8 @@ public class Step
 			@NonNull final LocalDateTime dueDate,
 			@NonNull final Duration humanResourceTestGroupDuration,
 			@NonNull final Integer seqNo,
+			@Nullable final Step previousStep,
+			@Nullable final Step nextStep,
 			final boolean pinned)
 	{
 		this.id = id;
@@ -77,6 +80,8 @@ public class Step
 		this.pinned = pinned;
 		this.humanResourceTestGroupDuration = humanResourceTestGroupDuration;
 		this.seqNo = seqNo;
+		this.previousStep = previousStep;
+		this.nextStep = nextStep;
 	}
 
 	@Override
@@ -113,7 +118,6 @@ public class Step
 		return BooleanWithReason.TRUE;
 	}
 
-	@ValueRangeProvider
 	public CountableValueRange<Integer> getDelayRange()
 	{
 		final int delayMax = computeDelayMax();
@@ -134,7 +138,6 @@ public class Step
 	{
 		return YearWeek.from(getStartDate());
 	}
-
 
 	@NonNull
 	public LocalDateTime getEndDate()
@@ -178,12 +181,17 @@ public class Step
 
 	public int getDurationFromEndToDueDateInHoursAbs() {return Math.abs((int)getDurationFromEndToDueDate().toHours());}
 
-	public StepHumanResourceRequired computeStepHumanResourceRequired()
+	@Nullable
+	// @PreviousElementShadowVariable(sourceVariableName = "stepList")
+	public Step getPreviousStep()
 	{
-		return StepHumanResourceRequired.builder()
-				.stepId(getId())
-				.requiredDuration(getHumanResourceTestGroupDuration())
-				.resource(getResource())
-				.build();
+		return previousStep;
+	}
+
+	@Nullable
+	// @NextElementShadowVariable(sourceVariableName = "stepList")
+	public Step getNextStep()
+	{
+		return nextStep;
 	}
 }

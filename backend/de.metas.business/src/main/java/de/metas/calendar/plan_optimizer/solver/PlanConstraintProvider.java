@@ -1,6 +1,7 @@
 package de.metas.calendar.plan_optimizer.solver;
 
 import de.metas.calendar.plan_optimizer.domain.Plan;
+import de.metas.calendar.plan_optimizer.domain.Project;
 import de.metas.calendar.plan_optimizer.domain.Step;
 import de.metas.calendar.plan_optimizer.domain.StepHumanResourceAllocationsAggregate;
 import de.metas.calendar.plan_optimizer.domain.StepHumanResourceRequired;
@@ -36,24 +37,24 @@ public class PlanConstraintProvider implements ConstraintProvider
 				// resourceConflict(constraintFactory),
 				// startDateMin(constraintFactory),
 				// dueDate(constraintFactory),
-				humanResourceAvailableCapacity(constraintFactory),
+				// humanResourceAvailableCapacity(constraintFactory),
 				// Soft:
-				// stepsNotRespectingProjectPriority(constraintFactory),
+				stepsNotRespectingProjectPriority(constraintFactory),
 				// delayIsMinimum(constraintFactory),
 				// minDurationFromEndToDueDateIsMaximum(constraintFactory),
 				// sumOfDurationFromEndToDueDateIsMaximum(constraintFactory),
 		};
 	}
 
-	// Constraint resourceConflict(final ConstraintFactory constraintFactory)
-	// {
-	// 	return constraintFactory.forEachUniquePair(
-	// 					Step.class,
-	// 					Joiners.equal(Step::getResource),
-	// 					stepsOverlapping())
-	// 			.penalize(ONE_HARD, PlanConstraintProvider::getOverlappingDuration)
-	// 			.asConstraint("Resource conflict");
-	// }
+	Constraint resourceConflict(final ConstraintFactory constraintFactory)
+	{
+		return constraintFactory.forEachUniquePair(
+						Step.class,
+						Joiners.equal(Step::getResource),
+						stepsOverlapping())
+				.penalize(ONE_HARD, PlanConstraintProvider::getOverlappingDuration)
+				.asConstraint("Resource conflict");
+	}
 
 	private static BiJoiner<Step, Step> stepsOverlapping() {return Joiners.overlapping(Step::getStartDate, Step::getEndDate);}
 
@@ -90,73 +91,75 @@ public class PlanConstraintProvider implements ConstraintProvider
 				)
 				.filter((resource, yearWeek, allocationsAgg) -> allocationsAgg.isWeeklyCapacityExceeded(resource.getHumanResourceWeeklyCapacityInHours()))
 				.penalize(ONE_HARD_2,
-						(resource, yearWeek, allocationsAgg) -> allocationsAgg.computePenaltyWeight(resource.getHumanResourceWeeklyCapacityInHours()))
+						  (resource, yearWeek, allocationsAgg) -> allocationsAgg.computePenaltyWeight(resource.getHumanResourceWeeklyCapacityInHours()))
 				.asConstraint("Available human resource test group capacity");
 	}
-/*
-	Constraint delayIsMinimum(final ConstraintFactory constraintFactory)
-	{
-		return constraintFactory.forEach(Step.class)
-				.filter(step -> step.getDelay() > 0)
-				.penalize(ONE_SOFT_1, Step::getDelay)
-				.asConstraint("Delay is minimum");
-	}
-
-	// select from the solution set S the solution s for which the minimum amount |tdi-tei| is maximum
-	Constraint minDurationFromEndToDueDateIsMaximum(final ConstraintFactory constraintFactory)
-	{
-		return constraintFactory.forEach(Step.class)
-				.groupBy(ConstraintCollectors.min(Step::getDurationFromEndToDueDateInHoursAbs))
-				.reward(ONE_SOFT_2, durationFromEndToDueDateInHours -> durationFromEndToDueDateInHours)
-				.asConstraint("solution for which the minimum of |tdi-tei| is maximum");
-	}
-
-	// Choose from Z the solution where the sum of | tdi- tei | is maximum
-	Constraint sumOfDurationFromEndToDueDateIsMaximum(final ConstraintFactory constraintFactory)
-	{
-		return constraintFactory.forEach(Step.class)
-				.groupBy(ConstraintCollectors.sum(Step::getDurationFromEndToDueDateInHoursAbs))
-				.reward(ONE_SOFT_3, sum -> sum)
-				.asConstraint("solution for which sum of |tdi-tei| is maximum");
-	}
+	// Constraint delayIsMinimum(final ConstraintFactory constraintFactory)
+	// {
+	// 	return constraintFactory.forEach(Step.class)
+	// 			.filter(step -> step.getDelay() > 0)
+	// 			.penalize(ONE_SOFT_1, Step::getDelay)
+	// 			.asConstraint("Delay is minimum");
+	// }
+	//
+	// // select from the solution set S the solution s for which the minimum amount |tdi-tei| is maximum
+	// Constraint minDurationFromEndToDueDateIsMaximum(final ConstraintFactory constraintFactory)
+	// {
+	// 	return constraintFactory.forEach(Step.class)
+	// 			.groupBy(ConstraintCollectors.min(Step::getDurationFromEndToDueDateInHoursAbs))
+	// 			.reward(ONE_SOFT_2, durationFromEndToDueDateInHours -> durationFromEndToDueDateInHours)
+	// 			.asConstraint("solution for which the minimum of |tdi-tei| is maximum");
+	// }
+	//
+	// // Choose from Z the solution where the sum of | tdi- tei | is maximum
+	// Constraint sumOfDurationFromEndToDueDateIsMaximum(final ConstraintFactory constraintFactory)
+	// {
+	// 	return constraintFactory.forEach(Step.class)
+	// 			.groupBy(ConstraintCollectors.sum(Step::getDurationFromEndToDueDateInHoursAbs))
+	// 			.reward(ONE_SOFT_3, sum -> sum)
+	// 			.asConstraint("solution for which sum of |tdi-tei| is maximum");
+	// }
 
 	Constraint stepsNotRespectingProjectPriority(final ConstraintFactory constraintFactory)
 	{
 		return constraintFactory.forEachUniquePair(
-						Step.class,
-						Joiners.equal(Step::getResource),
+						Project.class,
+						Joiners.equal(Project::getProjectId),
 						stepsNotRespectingProjectPriority())
 				.penalize(ONE_SOFT_1, PlanConstraintProvider::computePenaltyWeight_StepsNotRespectingProjectPriority)
 				.asConstraint("Steps not respecting project priority");
 	}
-
-	private static BiJoiner<Step, Step> stepsNotRespectingProjectPriority() {return JoinerSupport.getJoinerService().newBiJoiner(PlanConstraintProvider::stepsNotRespectingProjectPriority);}
-
-	static boolean stepsNotRespectingProjectPriority(final Step step1, final Step step2)
+	//
+	private static BiJoiner<Project, Project> stepsNotRespectingProjectPriority()
 	{
-		return computePenaltyWeight_StepsNotRespectingProjectPriority(step1, step2) > 0;
+		return JoinerSupport.getJoinerService().newBiJoiner(PlanConstraintProvider::stepsNotRespectingProjectPriority);
 	}
 
-	static int computePenaltyWeight_StepsNotRespectingProjectPriority(final Step step1, final Step step2)
+	static boolean stepsNotRespectingProjectPriority(final Project p1, final Project p2)
 	{
-		final InternalPriority prio1 = step1.getProjectPriority();
-		final InternalPriority prio2 = step2.getProjectPriority();
+		return computePenaltyWeight_StepsNotRespectingProjectPriority(p1, p2) > 0;
+	}
+
+	static int computePenaltyWeight_StepsNotRespectingProjectPriority(final Project p1, final Project p2)
+	{
+		final InternalPriority prio1 = p1.getProjectPriority();
+		final InternalPriority prio2 = p2.getProjectPriority();
 		if (prio1.equals(prio2))
 		{
 			return 0;
 		}
 		else if (prio1.isHigherThan(prio2))
 		{
-			final LocalDateTime endDate1 = Check.assumeNotNull(step1.getEndDate(), "end date not null: {}", step1);
-			final LocalDateTime startDate2 = Check.assumeNotNull(step2.getStartDate(), "start date not null: {}", step2);
+			final LocalDateTime endDate1 = Check.assumeNotNull(LocalDateTime.MAX, "end date not null: {}", p1);
+			final LocalDateTime startDate2 = Check.assumeNotNull(LocalDateTime.MAX, "start date not null: {}", p2);
 
 			final int duration = (int)Plan.PLANNING_TIME_PRECISION.between(endDate1, startDate2);
 			return duration < 0 ? -duration : 0;
 		}
 		else
 		{
-			final LocalDateTime endDate2 = Check.assumeNotNull(step2.getEndDate(), "end date not null: {}", step1);
-			final LocalDateTime startDate1 = Check.assumeNotNull(step1.getStartDate(), "start date not null: {}", step2);
+			final LocalDateTime endDate2 = Check.assumeNotNull(LocalDateTime.MIN, "end date not null: {}", p1);
+			final LocalDateTime startDate1 = Check.assumeNotNull(LocalDateTime.MAX, "start date not null: {}", p2);
 
 			final int duration = (int)Plan.PLANNING_TIME_PRECISION.between(endDate2, startDate1);
 			return duration < 0 ? -duration : 0;
@@ -172,5 +175,5 @@ public class PlanConstraintProvider implements ConstraintProvider
 		final LocalDateTime overlappingStart = (step1Start.isAfter(step2Start)) ? step1Start : step2Start; // MAX
 		final LocalDateTime overlappingEnd = (step1End.isBefore(step2End)) ? step1End : step2End; // MIN
 		return (int)Plan.PLANNING_TIME_PRECISION.between(overlappingStart, overlappingEnd);
-	}*/
+	}
 }

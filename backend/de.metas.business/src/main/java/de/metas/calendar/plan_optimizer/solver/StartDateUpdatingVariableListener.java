@@ -37,41 +37,22 @@ public class StartDateUpdatingVariableListener implements ListVariableListener<P
 {
 
 	@Override
-	public void afterListVariableElementUnassigned(final ScoreDirector<Plan> scoreDirector, final Step step)
-	{
-		throw new UnsupportedOperationException("This example does not support adding projects.");
-	}
+	public void afterListVariableElementUnassigned(final ScoreDirector<Plan> scoreDirector, final Step step) {}
 
 	@Override
-	public void beforeListVariableChanged(final ScoreDirector<Plan> scoreDirector, final Project project, final int fromIndex, final int toIndex)
-	{
-		throw new UnsupportedOperationException("This example does not support adding projects.");
-	}
+	public void beforeListVariableChanged(final ScoreDirector<Plan> scoreDirector, final Project project, final int fromIndex, final int toIndex)	{}
 
 	@Override
-	public void beforeEntityAdded(final ScoreDirector<Plan> scoreDirector, final Project project)
-	{
-		throw new UnsupportedOperationException("This example does not support adding projects.");
-	}
+	public void beforeEntityAdded(final ScoreDirector<Plan> scoreDirector, final Project project) {}
 
 	@Override
-	public void afterEntityAdded(final ScoreDirector<Plan> scoreDirector, final Project project)
-	{
-		throw new UnsupportedOperationException("This example does not support adding projects.");
-	}
+	public void afterEntityAdded(final ScoreDirector<Plan> scoreDirector, final Project project) {}
 
 	@Override
-	public void beforeEntityRemoved(final ScoreDirector<Plan> scoreDirector, final Project project)
-	{
-		throw new UnsupportedOperationException("This example does not support adding projects.");
-
-	}
+	public void beforeEntityRemoved(final ScoreDirector<Plan> scoreDirector, final Project project) {}
 
 	@Override
-	public void afterEntityRemoved(final ScoreDirector<Plan> scoreDirector, final Project project)
-	{
-		throw new UnsupportedOperationException("This example does not support adding projects.");
-	}
+	public void afterEntityRemoved(final ScoreDirector<Plan> scoreDirector, final Project project) {}
 
 	@Override
 	public void afterListVariableChanged(final ScoreDirector<Plan> scoreDirector, final Project project, final int fromIndex, final int toIndex) //todo fp this one
@@ -81,7 +62,7 @@ public class StartDateUpdatingVariableListener implements ListVariableListener<P
 
 	private void computeStartDate(final ScoreDirector<Plan> scoreDirector, final Project project, final int index) //todo fp
 	{
-		final List<Step> steps = project.getSteps();
+		final List<Step> steps = project.getStepList();
 		LocalDateTime previousEndTime = index == 0 ? null : steps.get(index - 1).getEndDate(); //todo fp
 
 		for (final Step step : steps)

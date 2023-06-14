@@ -2,7 +2,7 @@ package org.compiere.model;
 
 
 /** Generated Interface for AD_Table
- *  @author Adempiere (generated) 
+ *  @author Adempiere (generated)
  */
 @SuppressWarnings("javadoc")
 public interface I_AD_Table 
@@ -192,6 +192,27 @@ public interface I_AD_Table
     public static final String COLUMNNAME_AD_Window_ID = "AD_Window_ID";
 
 	/**
+	 * Set Cloning Enabled.
+	 *
+	 * <br>Type: List
+	 * <br>Mandatory: true
+	 * <br>Virtual Column: false
+	 */
+	void setCloningEnabled (java.lang.String CloningEnabled);
+
+	/**
+	 * Get Cloning Enabled.
+	 *
+	 * <br>Type: List
+	 * <br>Mandatory: true
+	 * <br>Virtual Column: false
+	 */
+	java.lang.String getCloningEnabled();
+
+	ModelColumn<I_AD_Table, Object> COLUMN_CloningEnabled = new ModelColumn<>(I_AD_Table.class, "CloningEnabled", null);
+	String COLUMNNAME_CloningEnabled = "CloningEnabled";
+
+	/**
 	 * Set Copy Columns From Table.
 	 *
 	 * <br>Type: Button
@@ -264,6 +285,27 @@ public interface I_AD_Table
     public static final org.adempiere.model.ModelColumn<I_AD_Table, Object> COLUMN_Description = new org.adempiere.model.ModelColumn<I_AD_Table, Object>(I_AD_Table.class, "Description", null);
     /** Column name Description */
     public static final String COLUMNNAME_Description = "Description";
+
+	/**
+	 * Set Downline Cloning Strategy.
+	 *
+	 * <br>Type: List
+	 * <br>Mandatory: true
+	 * <br>Virtual Column: false
+	 */
+	void setDownlineCloningStrategy (java.lang.String DownlineCloningStrategy);
+
+	/**
+	 * Get Downline Cloning Strategy.
+	 *
+	 * <br>Type: List
+	 * <br>Mandatory: true
+	 * <br>Virtual Column: false
+	 */
+	java.lang.String getDownlineCloningStrategy();
+
+	ModelColumn<I_AD_Table, Object> COLUMN_DownlineCloningStrategy = new ModelColumn<>(I_AD_Table.class, "DownlineCloningStrategy", null);
+	String COLUMNNAME_DownlineCloningStrategy = "DownlineCloningStrategy";
 
 	/**
 	 * Set Entitäts-Art.
@@ -761,4 +803,27 @@ public interface I_AD_Table
 
     /** Column name UpdatedBy */
     public static final String COLUMNNAME_UpdatedBy = "UpdatedBy";
+
+	/**
+	 * Set When Child Cloning Strategy.
+	 * The cloning strategy to be used when this table is included (as a child) to a parent (e.g. C_OrderLine)
+	 *
+	 * <br>Type: List
+	 * <br>Mandatory: true
+	 * <br>Virtual Column: false
+	 */
+	void setWhenChildCloningStrategy (java.lang.String WhenChildCloningStrategy);
+
+	/**
+	 * Get When Child Cloning Strategy.
+	 * The cloning strategy to be used when this table is included (as a child) to a parent (e.g. C_OrderLine)
+	 *
+	 * <br>Type: List
+	 * <br>Mandatory: true
+	 * <br>Virtual Column: false
+	 */
+	java.lang.String getWhenChildCloningStrategy();
+
+	ModelColumn<I_AD_Table, Object> COLUMN_WhenChildCloningStrategy = new ModelColumn<>(I_AD_Table.class, "WhenChildCloningStrategy", null);
+	String COLUMNNAME_WhenChildCloningStrategy = "WhenChildCloningStrategy";
 }

@@ -5,16 +5,13 @@ import java.sql.ResultSet;
 import java.util.Properties;
 
 /** Generated Model for AD_Table
- *  @author Adempiere (generated) 
+ *  @author Adempiere (generated)
  */
 @SuppressWarnings("javadoc")
 public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org.compiere.model.I_Persistent 
 {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 85997389L;
+	private static final long serialVersionUID = -88752471L;
 
     /** Standard Constructor */
     public X_AD_Table (Properties ctx, int AD_Table_ID, String trxName)
@@ -73,7 +70,7 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 	/** ClientOnly = 2 */
 	public static final String ACCESSLEVEL_ClientOnly = "2";
 	/** Set Berechtigungsstufe.
-		@param AccessLevel 
+		@param AccessLevel
 		Access Level required
 	  */
 	@Override
@@ -87,13 +84,13 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 		@return Access Level required
 	  */
 	@Override
-	public java.lang.String getAccessLevel () 
+	public java.lang.String getAccessLevel ()
 	{
 		return (java.lang.String)get_Value(COLUMNNAME_AccessLevel);
 	}
 
 	/** Set Auto Complete Min Length.
-		@param ACTriggerLength 
+		@param ACTriggerLength
 		Identifier autocomplete trigger length
 	  */
 	@Override
@@ -106,7 +103,7 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 		@return Identifier autocomplete trigger length
 	  */
 	@Override
-	public int getACTriggerLength () 
+	public int getACTriggerLength ()
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_ACTriggerLength);
 		if (ii == null)
@@ -115,7 +112,7 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 	}
 
 	/** Set DB-Tabelle.
-		@param AD_Table_ID 
+		@param AD_Table_ID
 		Database Table information
 	  */
 	@Override
@@ -131,7 +128,7 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 		@return Database Table information
 	  */
 	@Override
-	public int getAD_Table_ID () 
+	public int getAD_Table_ID ()
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_AD_Table_ID);
 		if (ii == null)
@@ -152,7 +149,7 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 	}
 
 	/** Set Dynamische Validierung.
-		@param AD_Val_Rule_ID 
+		@param AD_Val_Rule_ID
 		Dynamic Validation Rule
 	  */
 	@Override
@@ -168,7 +165,7 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 		@return Dynamic Validation Rule
 	  */
 	@Override
-	public int getAD_Val_Rule_ID () 
+	public int getAD_Val_Rule_ID ()
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_AD_Val_Rule_ID);
 		if (ii == null)
@@ -189,7 +186,7 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 	}
 
 	/** Set Fenster.
-		@param AD_Window_ID 
+		@param AD_Window_ID
 		Data entry or display window
 	  */
 	@Override
@@ -205,7 +202,7 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 		@return Data entry or display window
 	  */
 	@Override
-	public int getAD_Window_ID () 
+	public int getAD_Window_ID ()
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_AD_Window_ID);
 		if (ii == null)
@@ -213,8 +210,29 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 		return ii.intValue();
 	}
 
-	/** Set Copy Columns From Table.
-		@param CopyColumnsFromTable Copy Columns From Table	  */
+	/**
+	 * CloningEnabled AD_Reference_ID=541757
+	 * Reference name: AD_Table_CloningEnabled
+	 */
+	public static final int CLONINGENABLED_AD_Reference_ID=541757;
+	/** Enabled = E */
+	public static final String CLONINGENABLED_Enabled = "E";
+	/** Disabled = D */
+	public static final String CLONINGENABLED_Disabled = "D";
+	/** Auto = A */
+	public static final String CLONINGENABLED_Auto = "A";
+	@Override
+	public void setCloningEnabled (final java.lang.String CloningEnabled)
+	{
+		set_Value (COLUMNNAME_CloningEnabled, CloningEnabled);
+	}
+
+	@Override
+	public java.lang.String getCloningEnabled()
+	{
+		return get_ValueAsString(COLUMNNAME_CloningEnabled);
+	}
+
 	@Override
 	public void setCopyColumnsFromTable (java.lang.String CopyColumnsFromTable)
 	{
@@ -224,7 +242,7 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 	/** Get Copy Columns From Table.
 		@return Copy Columns From Table	  */
 	@Override
-	public java.lang.String getCopyColumnsFromTable () 
+	public java.lang.String getCopyColumnsFromTable ()
 	{
 		return (java.lang.String)get_Value(COLUMNNAME_CopyColumnsFromTable);
 	}
@@ -240,18 +258,41 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 	/** Get Beschreibung.
 		@return Beschreibung	  */
 	@Override
-	public java.lang.String getDescription () 
+	public java.lang.String getDescription ()
 	{
 		return (java.lang.String)get_Value(COLUMNNAME_Description);
 	}
 
-	/** 
+	/**
+	 * DownlineCloningStrategy AD_Reference_ID=541755
+	 * Reference name: AD_Table_DownlineCloningStrategy
+	 */
+	public static final int DOWNLINECLONINGSTRATEGY_AD_Reference_ID=541755;
+	/** Skip = S */
+	public static final String DOWNLINECLONINGSTRATEGY_Skip = "S";
+	/** Auto = A */
+	public static final String DOWNLINECLONINGSTRATEGY_Auto = "A";
+	/** OnlyIncluded = I */
+	public static final String DOWNLINECLONINGSTRATEGY_OnlyIncluded = "I";
+	@Override
+	public void setDownlineCloningStrategy (final java.lang.String DownlineCloningStrategy)
+	{
+		set_Value (COLUMNNAME_DownlineCloningStrategy, DownlineCloningStrategy);
+	}
+
+	@Override
+	public java.lang.String getDownlineCloningStrategy()
+	{
+		return get_ValueAsString(COLUMNNAME_DownlineCloningStrategy);
+	}
+
+	/**
 	 * EntityType AD_Reference_ID=389
 	 * Reference name: _EntityTypeNew
 	 */
 	public static final int ENTITYTYPE_AD_Reference_ID=389;
 	/** Set Entitäts-Art.
-		@param EntityType 
+		@param EntityType
 		Dictionary Entity Type; Determines ownership and synchronization
 	  */
 	@Override
@@ -265,13 +306,13 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 		@return Dictionary Entity Type; Determines ownership and synchronization
 	  */
 	@Override
-	public java.lang.String getEntityType () 
+	public java.lang.String getEntityType ()
 	{
 		return (java.lang.String)get_Value(COLUMNNAME_EntityType);
 	}
 
 	/** Set Kommentar/Hilfe.
-		@param Help 
+		@param Help
 		Comment or Hint
 	  */
 	@Override
@@ -284,13 +325,13 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 		@return Comment or Hint
 	  */
 	@Override
-	public java.lang.String getHelp () 
+	public java.lang.String getHelp ()
 	{
 		return (java.lang.String)get_Value(COLUMNNAME_Help);
 	}
 
 	/** Set Import Table.
-		@param ImportTable 
+		@param ImportTable
 		Import Table Columns from Database
 	  */
 	@Override
@@ -303,13 +344,13 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 		@return Import Table Columns from Database
 	  */
 	@Override
-	public java.lang.String getImportTable () 
+	public java.lang.String getImportTable ()
 	{
 		return (java.lang.String)get_Value(COLUMNNAME_ImportTable);
 	}
 
 	/** Set Autocomplete.
-		@param IsAutocomplete 
+		@param IsAutocomplete
 		Automatic completion for textfields
 	  */
 	@Override
@@ -322,20 +363,20 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 		@return Automatic completion for textfields
 	  */
 	@Override
-	public boolean isAutocomplete () 
+	public boolean isAutocomplete ()
 	{
 		Object oo = get_Value(COLUMNNAME_IsAutocomplete);
-		if (oo != null) 
+		if (oo != null)
 		{
-			 if (oo instanceof Boolean) 
-				 return ((Boolean)oo).booleanValue(); 
+			 if (oo instanceof Boolean)
+				 return ((Boolean)oo).booleanValue();
 			return "Y".equals(oo);
 		}
 		return false;
 	}
 
 	/** Set Änderungen protokollieren.
-		@param IsChangeLog 
+		@param IsChangeLog
 		Maintain a log of changes
 	  */
 	@Override
@@ -348,20 +389,20 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 		@return Maintain a log of changes
 	  */
 	@Override
-	public boolean isChangeLog () 
+	public boolean isChangeLog ()
 	{
 		Object oo = get_Value(COLUMNNAME_IsChangeLog);
-		if (oo != null) 
+		if (oo != null)
 		{
-			 if (oo instanceof Boolean) 
-				 return ((Boolean)oo).booleanValue(); 
+			 if (oo instanceof Boolean)
+				 return ((Boolean)oo).booleanValue();
 			return "Y".equals(oo);
 		}
 		return false;
 	}
 
 	/** Set Records deleteable.
-		@param IsDeleteable 
+		@param IsDeleteable
 		Indicates if records can be deleted from the database
 	  */
 	@Override
@@ -374,13 +415,13 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 		@return Indicates if records can be deleted from the database
 	  */
 	@Override
-	public boolean isDeleteable () 
+	public boolean isDeleteable ()
 	{
 		Object oo = get_Value(COLUMNNAME_IsDeleteable);
-		if (oo != null) 
+		if (oo != null)
 		{
-			 if (oo instanceof Boolean) 
-				 return ((Boolean)oo).booleanValue(); 
+			 if (oo instanceof Boolean)
+				 return ((Boolean)oo).booleanValue();
 			return "Y".equals(oo);
 		}
 		return false;
@@ -397,20 +438,20 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 	/** Get Enable remote cache invalidation.
 		@return Enable remote cache invalidation	  */
 	@Override
-	public boolean isEnableRemoteCacheInvalidation () 
+	public boolean isEnableRemoteCacheInvalidation ()
 	{
 		Object oo = get_Value(COLUMNNAME_IsEnableRemoteCacheInvalidation);
-		if (oo != null) 
+		if (oo != null)
 		{
-			 if (oo instanceof Boolean) 
-				 return ((Boolean)oo).booleanValue(); 
+			 if (oo instanceof Boolean)
+				 return ((Boolean)oo).booleanValue();
 			return "Y".equals(oo);
 		}
 		return false;
 	}
 
 	/** Set High Volume.
-		@param IsHighVolume 
+		@param IsHighVolume
 		Use Search instead of Pick list
 	  */
 	@Override
@@ -423,20 +464,20 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 		@return Use Search instead of Pick list
 	  */
 	@Override
-	public boolean isHighVolume () 
+	public boolean isHighVolume ()
 	{
 		Object oo = get_Value(COLUMNNAME_IsHighVolume);
-		if (oo != null) 
+		if (oo != null)
 		{
-			 if (oo instanceof Boolean) 
-				 return ((Boolean)oo).booleanValue(); 
+			 if (oo instanceof Boolean)
+				 return ((Boolean)oo).booleanValue();
 			return "Y".equals(oo);
 		}
 		return false;
 	}
 
 	/** Set Security enabled.
-		@param IsSecurityEnabled 
+		@param IsSecurityEnabled
 		If security is enabled, user access to data can be restricted via Roles
 	  */
 	@Override
@@ -449,20 +490,20 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 		@return If security is enabled, user access to data can be restricted via Roles
 	  */
 	@Override
-	public boolean isSecurityEnabled () 
+	public boolean isSecurityEnabled ()
 	{
 		Object oo = get_Value(COLUMNNAME_IsSecurityEnabled);
-		if (oo != null) 
+		if (oo != null)
 		{
-			 if (oo instanceof Boolean) 
-				 return ((Boolean)oo).booleanValue(); 
+			 if (oo instanceof Boolean)
+				 return ((Boolean)oo).booleanValue();
 			return "Y".equals(oo);
 		}
 		return false;
 	}
 
 	/** Set Ansicht.
-		@param IsView 
+		@param IsView
 		This is a view
 	  */
 	@Override
@@ -475,13 +516,13 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 		@return This is a view
 	  */
 	@Override
-	public boolean isView () 
+	public boolean isView ()
 	{
 		Object oo = get_Value(COLUMNNAME_IsView);
-		if (oo != null) 
+		if (oo != null)
 		{
-			 if (oo instanceof Boolean) 
-				 return ((Boolean)oo).booleanValue(); 
+			 if (oo instanceof Boolean)
+				 return ((Boolean)oo).booleanValue();
 			return "Y".equals(oo);
 		}
 		return false;
@@ -498,7 +539,7 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 	/** Get Reihenfolge.
 		@return Reihenfolge	  */
 	@Override
-	public int getLoadSeq () 
+	public int getLoadSeq ()
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_LoadSeq);
 		if (ii == null)
@@ -517,7 +558,7 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 	/** Get Name.
 		@return Name	  */
 	@Override
-	public java.lang.String getName () 
+	public java.lang.String getName ()
 	{
 		return (java.lang.String)get_Value(COLUMNNAME_Name);
 	}
@@ -545,7 +586,7 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 	/** Get Datenschutz-Kategorie.
 		@return Datenschutz-Kategorie	  */
 	@Override
-	public java.lang.String getPersonalDataCategory () 
+	public java.lang.String getPersonalDataCategory ()
 	{
 		return (java.lang.String)get_Value(COLUMNNAME_PersonalDataCategory);
 	}
@@ -563,7 +604,7 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 	}
 
 	/** Set PO Window.
-		@param PO_Window_ID 
+		@param PO_Window_ID
 		Purchase Order Window
 	  */
 	@Override
@@ -579,7 +620,7 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 		@return Purchase Order Window
 	  */
 	@Override
-	public int getPO_Window_ID () 
+	public int getPO_Window_ID ()
 	{
 		Integer ii = (Integer)get_Value(COLUMNNAME_PO_Window_ID);
 		if (ii == null)
@@ -599,7 +640,7 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 	/** Reference = R */
 	public static final String REPLICATIONTYPE_Reference = "R";
 	/** Set Replication Type.
-		@param ReplicationType 
+		@param ReplicationType
 		Type of Data Replication
 	  */
 	@Override
@@ -613,7 +654,7 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 		@return Type of Data Replication
 	  */
 	@Override
-	public java.lang.String getReplicationType () 
+	public java.lang.String getReplicationType ()
 	{
 		return (java.lang.String)get_Value(COLUMNNAME_ReplicationType);
 	}
@@ -629,13 +670,13 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 	/** Get Name der DB-Tabelle.
 		@return Name der DB-Tabelle	  */
 	@Override
-	public java.lang.String getTableName () 
+	public java.lang.String getTableName ()
 	{
 		return (java.lang.String)get_Value(COLUMNNAME_TableName);
 	}
 
 	/** Set Technical note.
-		@param TechnicalNote 
+		@param TechnicalNote
 		A note that is not indended for the user documentation, but for developers, customizers etc
 	  */
 	@Override
@@ -648,7 +689,7 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 		@return A note that is not indended for the user documentation, but for developers, customizers etc
 	  */
 	@Override
-	public java.lang.String getTechnicalNote () 
+	public java.lang.String getTechnicalNote ()
 	{
 		return (java.lang.String)get_Value(COLUMNNAME_TechnicalNote);
 	}
@@ -676,8 +717,31 @@ public class X_AD_Table extends org.compiere.model.PO implements I_AD_Table, org
 	/** Get Tooltip Type.
 		@return Tooltip Type	  */
 	@Override
-	public java.lang.String getTooltipType () 
+	public java.lang.String getTooltipType ()
 	{
 		return (java.lang.String)get_Value(COLUMNNAME_TooltipType);
+	}
+
+	/**
+	 * WhenChildCloningStrategy AD_Reference_ID=541756
+	 * Reference name: AD_Table_CloningStrategy
+	 */
+	public static final int WHENCHILDCLONINGSTRATEGY_AD_Reference_ID=541756;
+	/** Skip = S */
+	public static final String WHENCHILDCLONINGSTRATEGY_Skip = "S";
+	/** AllowCloning = A */
+	public static final String WHENCHILDCLONINGSTRATEGY_AllowCloning = "A";
+	/** AlwaysInclude = I */
+	public static final String WHENCHILDCLONINGSTRATEGY_AlwaysInclude = "I";
+	@Override
+	public void setWhenChildCloningStrategy (final java.lang.String WhenChildCloningStrategy)
+	{
+		set_Value (COLUMNNAME_WhenChildCloningStrategy, WhenChildCloningStrategy);
+	}
+
+	@Override
+	public java.lang.String getWhenChildCloningStrategy()
+	{
+		return get_ValueAsString(COLUMNNAME_WhenChildCloningStrategy);
 	}
 }

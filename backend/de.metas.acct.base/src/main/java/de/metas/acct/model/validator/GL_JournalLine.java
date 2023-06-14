@@ -1,23 +1,21 @@
 package de.metas.acct.model.validator;
 
+import de.metas.acct.gljournal.IGLJournalBL;
+import de.metas.acct.gljournal.IGLJournalLineBL;
+import de.metas.acct.gljournal.IGLJournalLineDAO;
+import de.metas.copy_with_details.CopyRecordFactory;
+import de.metas.util.Services;
 import org.adempiere.ad.modelvalidator.ModelChangeType;
 import org.adempiere.ad.modelvalidator.annotations.Init;
 import org.adempiere.ad.modelvalidator.annotations.Interceptor;
 import org.adempiere.ad.modelvalidator.annotations.ModelChange;
 import org.adempiere.ad.trx.api.ITrx;
 import org.adempiere.exceptions.AdempiereException;
-import org.adempiere.model.CopyRecordFactory;
 import org.compiere.model.I_GL_Journal;
 import org.compiere.model.I_GL_JournalBatch;
 import org.compiere.model.I_GL_JournalLine;
 import org.compiere.model.ModelValidator;
 import org.compiere.util.DB;
-
-import de.metas.acct.gljournal.IGLJournalBL;
-import de.metas.acct.gljournal.IGLJournalLineBL;
-import de.metas.acct.gljournal.IGLJournalLineDAO;
-import de.metas.acct.spi.impl.GLJournalLineCopyRecordSupport;
-import de.metas.util.Services;
 
 @Interceptor(I_GL_JournalLine.class)
 public class GL_JournalLine
@@ -31,7 +29,6 @@ public class GL_JournalLine
 	public void init()
 	{
 		CopyRecordFactory.enableForTableName(I_GL_JournalLine.Table_Name);
-		CopyRecordFactory.registerCopyRecordSupport(I_GL_JournalLine.Table_Name, GLJournalLineCopyRecordSupport.class);
 	}
 
 	@ModelChange(timings = { ModelValidator.TYPE_BEFORE_NEW, ModelValidator.TYPE_BEFORE_CHANGE })

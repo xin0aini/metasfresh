@@ -24,6 +24,7 @@ package de.metas.cucumber.stepdefs.deliveryplanning;
 
 import de.metas.cucumber.stepdefs.C_BPartner_Location_StepDefData;
 import de.metas.cucumber.stepdefs.C_BPartner_StepDefData;
+import de.metas.cucumber.stepdefs.C_Currency_StepDefData;
 import de.metas.cucumber.stepdefs.C_OrderLine_StepDefData;
 import de.metas.cucumber.stepdefs.C_Order_StepDefData;
 import de.metas.cucumber.stepdefs.DataTableUtil;
@@ -31,9 +32,25 @@ import de.metas.cucumber.stepdefs.M_Product_StepDefData;
 import de.metas.cucumber.stepdefs.M_Shipper_StepDefData;
 import de.metas.cucumber.stepdefs.StepDefDocAction;
 import de.metas.cucumber.stepdefs.StepDefUtil;
+import de.metas.cucumber.stepdefs.foreignexchangecontract.C_ForeignExchangeContract_StepDefData;
 import de.metas.cucumber.stepdefs.warehouse.M_Warehouse_StepDefData;
 import de.metas.deliveryplanning.DeliveryPlanningId;
+import de.metas.deliveryplanning.DeliveryPlanningReceiptInfo;
 import de.metas.deliveryplanning.DeliveryPlanningService;
+import de.metas.deliveryplanning.DeliveryPlanningShipmentInfo;
+import de.metas.forex.ForexContractId;
+import de.metas.forex.ForexContractRef;
+import de.metas.handlingunits.model.I_M_ReceiptSchedule;
+import de.metas.handlingunits.model.I_M_ShipmentSchedule;
+import de.metas.handlingunits.receiptschedule.IHUReceiptScheduleBL;
+import de.metas.handlingunits.shipmentschedule.api.M_ShipmentSchedule_QuantityTypeToUse;
+import de.metas.handlingunits.shipmentschedule.api.ShipmentScheduleEnqueuer;
+import de.metas.i18n.IMsgBL;
+import de.metas.inout.ShipmentScheduleId;
+import de.metas.inoutcandidate.api.InOutGenerateResult;
+import de.metas.inoutcandidate.api.impl.ReceiptMovementDateRule;
+import de.metas.money.CurrencyId;
+import de.metas.process.IADPInstanceDAO;
 import de.metas.shipping.model.I_M_ShipperTransportation;
 import de.metas.util.Check;
 import de.metas.util.Services;
@@ -44,23 +61,29 @@ import lombok.NonNull;
 import org.adempiere.ad.dao.IQueryBL;
 import org.adempiere.ad.dao.IQueryBuilder;
 import org.adempiere.ad.dao.IQueryFilter;
+import org.adempiere.ad.trx.api.ITrx;
 import org.adempiere.exceptions.AdempiereException;
 import org.adempiere.model.InterfaceWrapperHelper;
+import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
 import org.compiere.SpringContextHolder;
 import org.compiere.model.I_C_BPartner;
 import org.compiere.model.I_C_BPartner_Location;
+import org.compiere.model.I_C_ForeignExchangeContract;
 import org.compiere.model.I_C_Order;
 import org.compiere.model.I_C_OrderLine;
 import org.compiere.model.I_M_Delivery_Planning;
 import org.compiere.model.I_M_Product;
 import org.compiere.model.I_M_Shipper;
 import org.compiere.model.I_M_Warehouse;
+import org.compiere.util.Env;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import static de.metas.cucumber.stepdefs.StepDefConstants.TABLECOLUMN_IDENTIFIER;
@@ -69,6 +92,8 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 public class M_Delivery_Planning_StepDef
 {
+	private final HashMap<DeliveryPlanningId, Optional<DeliveryPlanningReceiptInfo>> receiptInfos = new HashMap<>();
+
 	private final DeliveryPlanningService deliveryPlanningService = SpringContextHolder.instance.getBean(DeliveryPlanningService.class);
 
 	private final M_Delivery_Planning_StepDefData deliveryPlanningTable;
@@ -80,8 +105,13 @@ public class M_Delivery_Planning_StepDef
 	private final C_BPartner_Location_StepDefData bPartnerLocationTable;
 	private final M_Warehouse_StepDefData warehouseTable;
 	private final M_ShipperTransportation_StepDefData deliveryInstructionTable;
+	private final C_ForeignExchangeContract_StepDefData foreignExchangeContractTable;
+	private final C_Currency_StepDefData currencyTable;
 
 	private final IQueryBL queryBL = Services.get(IQueryBL.class);
+	private final IMsgBL msgBL = Services.get(IMsgBL.class);
+	private final IADPInstanceDAO pinstanceDAO = Services.get(IADPInstanceDAO.class);
+	private final IHUReceiptScheduleBL huReceiptScheduleBL = Services.get(IHUReceiptScheduleBL.class);
 
 	public M_Delivery_Planning_StepDef(
 			@NonNull final M_Delivery_Planning_StepDefData deliveryPlanningTable,
@@ -92,7 +122,9 @@ public class M_Delivery_Planning_StepDef
 			@NonNull final M_Shipper_StepDefData shipperTable,
 			@NonNull final C_BPartner_Location_StepDefData bPartnerLocationTable,
 			@NonNull final M_Warehouse_StepDefData warehouseTable,
-			@NonNull final M_ShipperTransportation_StepDefData deliveryInstructionTable)
+			@NonNull final M_ShipperTransportation_StepDefData deliveryInstructionTable,
+			@NonNull final C_ForeignExchangeContract_StepDefData foreignExchangeContractTable,
+			@NonNull final C_Currency_StepDefData currencyTable)
 	{
 		this.deliveryPlanningTable = deliveryPlanningTable;
 		this.orderTable = orderTable;
@@ -103,6 +135,8 @@ public class M_Delivery_Planning_StepDef
 		this.bPartnerLocationTable = bPartnerLocationTable;
 		this.warehouseTable = warehouseTable;
 		this.deliveryInstructionTable = deliveryInstructionTable;
+		this.foreignExchangeContractTable = foreignExchangeContractTable;
+		this.currencyTable = currencyTable;
 	}
 
 	@And("^after not more than (.*)s, load created M_Delivery_Planning:$")
@@ -375,6 +409,143 @@ public class M_Delivery_Planning_StepDef
 		}
 	}
 
+	@And("generate goods issue:")
+	public void generate_goods_issue(@NonNull final DataTable dataTable)
+	{
+		for (final Map<String, String> row : dataTable.asMaps())
+		{
+			final String deliveryPlanningIdentifier = DataTableUtil.extractStringForColumnName(row, I_M_Delivery_Planning.COLUMNNAME_M_Delivery_Planning_ID + "." + TABLECOLUMN_IDENTIFIER);
+
+			final DeliveryPlanningId deliveryPlanningId = DeliveryPlanningId.ofRepoId(deliveryPlanningTable.get(deliveryPlanningIdentifier).getM_Delivery_Planning_ID());
+			deliveryPlanningService.validateDeliveryPlanning(deliveryPlanningId);
+
+			final DeliveryPlanningShipmentInfo shipmentInfo = deliveryPlanningService.getShipmentInfo(deliveryPlanningId);
+			if (shipmentInfo.isShipped())
+			{
+				throw new AdempiereException("Already shipped");
+			}
+
+			final String foreignExchangeContractIdentifier = DataTableUtil.extractStringForColumnName(row, I_C_ForeignExchangeContract.COLUMNNAME_C_ForeignExchangeContract_ID + "." + TABLECOLUMN_IDENTIFIER);
+			final ForexContractId forexContractId = ForexContractId.ofRepoId(foreignExchangeContractTable.get(foreignExchangeContractIdentifier).getC_ForeignExchangeContract_ID());
+
+			final String orderCurrencyIdentifier = DataTableUtil.extractStringForColumnName(row, I_C_Order.COLUMNNAME_C_Order_ID + "." + I_C_Order.COLUMNNAME_C_Currency_ID + "." + TABLECOLUMN_IDENTIFIER);
+			final CurrencyId orderCurrencyId = CurrencyId.ofRepoId(currencyTable.get(orderCurrencyIdentifier).getC_Currency_ID());
+
+			final String fromCurrencyIdentifier = DataTableUtil.extractStringForColumnName(row, I_C_ForeignExchangeContract.COLUMNNAME_C_Currency_ID + "." + TABLECOLUMN_IDENTIFIER);
+			final CurrencyId fromCurrencyId = CurrencyId.ofRepoId(currencyTable.get(fromCurrencyIdentifier).getC_Currency_ID());
+
+			final String toCurrencyIdentifier = DataTableUtil.extractStringForColumnName(row, I_C_ForeignExchangeContract.COLUMNNAME_To_Currency_ID + "." + TABLECOLUMN_IDENTIFIER);
+			final CurrencyId toCurrencyId = CurrencyId.ofRepoId(currencyTable.get(toCurrencyIdentifier).getC_Currency_ID());
+
+			final BigDecimal currencyRate = DataTableUtil.extractBigDecimalForColumnName(row, I_C_ForeignExchangeContract.COLUMNNAME_FEC_CurrencyRate);
+
+			final ShipmentScheduleId shipmentScheduleId = shipmentInfo.getShipmentScheduleId();
+			// final BigDecimal qtyOnHand = getQtyOnHandByShipmentScheduleId(shipmentScheduleId).toBigDecimal();
+			//
+			// final DeliveryRule deliveryRule = getDeliveryRuleByShipmentScheduleId(shipmentScheduleId);
+			// final InOutId b2bReceiptId = request.getB2bReceiptId();
+			// if (request.getQtyToShipBD().compareTo(qtyOnHand) > 0 && !deliveryRule.isForce() && b2bReceiptId == null)
+			// {
+			// 	throw new AdempiereException(MSG_ERROR_GOODS_ISSUE_QUANTITY);
+			// }
+
+			final ForexContractRef forexContractRef = ForexContractRef.builder()
+					.forexContractId(forexContractId)
+					.orderCurrencyId(orderCurrencyId)
+					.fromCurrencyId(fromCurrencyId)
+					.toCurrencyId(toCurrencyId)
+					.currencyRate(currencyRate)
+					.build();
+
+			final ShipmentScheduleEnqueuer.Result result = new ShipmentScheduleEnqueuer()
+					.setContext(Env.getCtx(), ITrx.TRXNAME_ThreadInherited)
+					.createWorkpackages(
+							ShipmentScheduleEnqueuer.ShipmentScheduleWorkPackageParameters.builder()
+									.adPInstanceId(pinstanceDAO.createSelectionId())
+									.queryFilters(Services.get(IQueryBL.class).createCompositeQueryFilter(I_M_ShipmentSchedule.class)
+														  .addEqualsFilter(I_M_ShipmentSchedule.COLUMNNAME_M_ShipmentSchedule_ID, shipmentScheduleId))
+									.quantityType(M_ShipmentSchedule_QuantityTypeToUse.TYPE_QTY_TO_DELIVER)
+									.completeShipments(true)
+									// .fixedShipmentDate(deliveryDate)
+									// .qtysToDeliverOverride(ImmutableMap.<ShipmentScheduleId, BigDecimal>builder()
+									// 							   .put(shipmentScheduleId, request.getQtyToShipBD())
+									// 							   .build())
+									.forexContractRef(forexContractRef)
+									.deliveryPlanningId(deliveryPlanningId)
+									// .b2bReceiptId(b2bReceiptId)
+									.build());
+
+			Assertions.assertThat(result.getEnqueuedPackagesCount()).isEqualTo(1);
+		}
+	}
+
+	@And("generate goods receipt:")
+	public void generate_goods_receipt(@NonNull final DataTable dataTable)
+	{
+		for (final Map<String, String> row : dataTable.asMaps())
+		{
+			final String deliveryPlanningIdentifier = DataTableUtil.extractStringForColumnName(row, I_M_Delivery_Planning.COLUMNNAME_M_Delivery_Planning_ID + "." + TABLECOLUMN_IDENTIFIER);
+
+			final DeliveryPlanningId deliveryPlanningId = DeliveryPlanningId.ofRepoId(deliveryPlanningTable.get(deliveryPlanningIdentifier).getM_Delivery_Planning_ID());
+			deliveryPlanningService.validateDeliveryPlanning(deliveryPlanningId);
+
+			final DeliveryPlanningReceiptInfo receiptInfo = getReceiptInfo(deliveryPlanningId);
+			if (receiptInfo.isReceived())
+			{
+				throw new AdempiereException("Already received");
+			}
+
+			final I_M_ReceiptSchedule receiptSchedule = huReceiptScheduleBL.getById(receiptInfo.getReceiptScheduleId());
+			// final Quantity qtyToReceive = Quantitys.create(request.getQtyToReceiveBD(), UomId.ofRepoId(receiptSchedule.getC_UOM_ID()));
+
+			final String foreignExchangeContractIdentifier = DataTableUtil.extractStringForColumnName(row, I_C_ForeignExchangeContract.COLUMNNAME_C_ForeignExchangeContract_ID + "." + TABLECOLUMN_IDENTIFIER);
+			final ForexContractId forexContractId = ForexContractId.ofRepoId(foreignExchangeContractTable.get(foreignExchangeContractIdentifier).getC_ForeignExchangeContract_ID());
+
+			final String orderCurrencyIdentifier = DataTableUtil.extractStringForColumnName(row, I_C_Order.COLUMNNAME_C_Order_ID + "." + I_C_Order.COLUMNNAME_C_Currency_ID + "." + TABLECOLUMN_IDENTIFIER);
+			final CurrencyId orderCurrencyId = CurrencyId.ofRepoId(currencyTable.get(orderCurrencyIdentifier).getC_Currency_ID());
+
+			final String fromCurrencyIdentifier = DataTableUtil.extractStringForColumnName(row, I_C_ForeignExchangeContract.COLUMNNAME_C_ForeignExchangeContract_ID + "." + I_C_ForeignExchangeContract.COLUMNNAME_C_Currency_ID + "." + TABLECOLUMN_IDENTIFIER);
+			final CurrencyId fromCurrencyId = CurrencyId.ofRepoId(currencyTable.get(fromCurrencyIdentifier).getC_Currency_ID());
+
+			final String toCurrencyIdentifier = DataTableUtil.extractStringForColumnName(row, I_C_ForeignExchangeContract.COLUMNNAME_C_ForeignExchangeContract_ID + "." + I_C_ForeignExchangeContract.COLUMNNAME_To_Currency_ID + "." + TABLECOLUMN_IDENTIFIER);
+			final CurrencyId toCurrencyId = CurrencyId.ofRepoId(currencyTable.get(toCurrencyIdentifier).getC_Currency_ID());
+
+			final BigDecimal currencyRate = DataTableUtil.extractBigDecimalForColumnName(row, I_C_ForeignExchangeContract.COLUMNNAME_FEC_CurrencyRate);
+
+			final ForexContractRef forexContractRef = ForexContractRef.builder()
+					.forexContractId(forexContractId)
+					.orderCurrencyId(orderCurrencyId)
+					.fromCurrencyId(fromCurrencyId)
+					.toCurrencyId(toCurrencyId)
+					.currencyRate(currencyRate)
+					.build();
+
+			// final I_M_HU vhu = huReceiptScheduleBL.createPlanningVHU(receiptSchedule, qtyToReceive);
+			// if (vhu == null)
+			// {
+			// 	throw new AdempiereException("Failed receiving"); // shall not happen
+			// }
+			// final HuId vhuId = HuId.ofRepoId(vhu.getM_HU_ID());
+
+			final InOutGenerateResult result = huReceiptScheduleBL.processReceiptSchedules(
+					IHUReceiptScheduleBL.CreateReceiptsParameters.builder()
+							.commitEachReceiptIndividually(false)
+							.movementDateRule(ReceiptMovementDateRule.CURRENT_DATE)
+							.ctx(Env.getCtx())
+							.destinationLocatorIdOrNull(null) // use receipt schedules' destination-warehouse settings
+							.printReceiptLabels(true)
+							.receiptSchedule(receiptSchedule)
+							// .selectedHuId(vhuId)
+							.forexContractRef(forexContractRef)
+							.deliveryPlanningId(deliveryPlanningId)
+							.build());
+
+			Assertions.assertThat(result).isNotNull();
+			Assertions.assertThat(result.getInOuts()).isNotEmpty();
+			Assertions.assertThat(result.getInOuts().size()).isEqualTo(1);
+		}
+	}
+
 	@NonNull
 	private IQueryFilter<I_M_Delivery_Planning> getQueryFilterFor(@NonNull final String deliveryPlanningIdentifier)
 	{
@@ -383,5 +554,16 @@ public class M_Delivery_Planning_StepDef
 
 		return queryBL.createCompositeQueryFilter(I_M_Delivery_Planning.class)
 				.addEqualsFilter(I_M_Delivery_Planning.COLUMNNAME_M_Delivery_Planning_ID, deliveryPlanning.getM_Delivery_Planning_ID());
+	}
+
+	private DeliveryPlanningReceiptInfo getReceiptInfo(@NonNull final DeliveryPlanningId deliveryPlanningId)
+	{
+		return getReceiptInfoIfIncomingType(deliveryPlanningId)
+				.orElseThrow(() -> new AdempiereException("Expected to be an incoming delivery planning"));
+	}
+
+	private Optional<DeliveryPlanningReceiptInfo> getReceiptInfoIfIncomingType(@NonNull final DeliveryPlanningId deliveryPlanningId)
+	{
+		return receiptInfos.computeIfAbsent(deliveryPlanningId, deliveryPlanningService::getReceiptInfoIfIncomingType);
 	}
 }

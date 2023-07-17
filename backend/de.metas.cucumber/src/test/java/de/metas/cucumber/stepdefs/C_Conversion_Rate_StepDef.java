@@ -26,8 +26,10 @@ import de.metas.money.CurrencyId;
 import de.metas.util.Services;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.And;
+import lombok.Data;
 import lombok.NonNull;
 import org.adempiere.ad.dao.IQueryBL;
+import org.adempiere.model.InterfaceWrapperHelper;
 import org.assertj.core.api.SoftAssertions;
 import org.compiere.model.I_C_Conversion_Rate;
 
@@ -71,6 +73,42 @@ public class C_Conversion_Rate_StepDef
 		for (final Map<String, String> tableRow : tableRows)
 		{
 			validateConversionRate(tableRow);
+		}
+	}
+
+	@And("metasfresh contains C_Conversion_Rate:")
+	public void create_C_Conversion_Rate(@NonNull final DataTable dataTable)
+	{
+		final List<Map<String, String>> tableRows = dataTable.asMaps(String.class, String.class);
+		for (final Map<String, String> tableRow : tableRows)
+		{
+			final String currencyFromIdentifier = DataTableUtil.extractStringForColumnName(tableRow, I_C_Conversion_Rate.COLUMNNAME_C_Currency_ID + "." + TABLECOLUMN_IDENTIFIER);
+			final CurrencyId currencyFromId = CurrencyId.ofRepoId(currencyTable.get(currencyFromIdentifier).getC_Currency_ID());
+
+			final String currencyToIdentifier = DataTableUtil.extractStringForColumnName(tableRow, I_C_Conversion_Rate.COLUMNNAME_C_Currency_ID_To + "." + TABLECOLUMN_IDENTIFIER);
+			final CurrencyId currencyToId = CurrencyId.ofRepoId(currencyTable.get(currencyToIdentifier).getC_Currency_ID());
+
+			final Timestamp validFrom = DataTableUtil.extractDateTimestampForColumnName(tableRow, I_C_Conversion_Rate.COLUMNNAME_ValidFrom);
+			final Timestamp validTo = DataTableUtil.extractDateTimestampForColumnName(tableRow, I_C_Conversion_Rate.COLUMNNAME_ValidTo);
+
+			final BigDecimal multiplyRate = DataTableUtil.extractBigDecimalForColumnName(tableRow, I_C_Conversion_Rate.COLUMNNAME_MultiplyRate);
+			final BigDecimal divideRate = DataTableUtil.extractBigDecimalForColumnName(tableRow, I_C_Conversion_Rate.COLUMNNAME_DivideRate);
+
+			final int conversionTypeId = DataTableUtil.extractIntForColumnName(tableRow, I_C_Conversion_Rate.COLUMNNAME_C_ConversionType_ID);
+
+			final I_C_Conversion_Rate conversionRate = InterfaceWrapperHelper.newInstance(I_C_Conversion_Rate.class);
+			conversionRate.setC_Currency_ID(currencyFromId.getRepoId());
+			conversionRate.setC_Currency_ID_To(currencyToId.getRepoId());
+			conversionRate.setValidFrom(validFrom);
+			conversionRate.setValidTo(validTo);
+			conversionRate.setMultiplyRate(multiplyRate);
+			conversionRate.setDivideRate(divideRate);
+			conversionRate.setC_ConversionType_ID(conversionTypeId);
+
+			InterfaceWrapperHelper.saveRecord(conversionRate);
+
+			final String identifier = DataTableUtil.extractStringForColumnName(tableRow, I_C_Conversion_Rate.COLUMNNAME_C_Conversion_Rate_ID + "." + TABLECOLUMN_IDENTIFIER);
+			conversionRateTable.putOrReplace(identifier, conversionRate);
 		}
 	}
 

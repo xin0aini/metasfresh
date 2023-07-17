@@ -22,6 +22,7 @@
 
 package de.metas.cucumber.stepdefs.acctschema;
 
+import de.metas.cucumber.stepdefs.C_Currency_StepDefData;
 import de.metas.cucumber.stepdefs.DataTableUtil;
 import de.metas.util.Check;
 import de.metas.util.Services;
@@ -29,7 +30,9 @@ import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.And;
 import lombok.NonNull;
 import org.adempiere.ad.dao.IQueryBL;
+import org.adempiere.model.InterfaceWrapperHelper;
 import org.compiere.model.I_C_AcctSchema;
+import org.compiere.model.I_C_Currency;
 
 import java.util.List;
 import java.util.Map;
@@ -41,10 +44,14 @@ public class C_AcctSchema_StepDef
 	private final IQueryBL queryBL = Services.get(IQueryBL.class);
 
 	private final C_AcctSchema_StepDefData acctSchemaTable;
+	private final C_Currency_StepDefData currencyTable;
 
-	public C_AcctSchema_StepDef(@NonNull final C_AcctSchema_StepDefData acctSchemaTable)
+	public C_AcctSchema_StepDef(
+			@NonNull final C_AcctSchema_StepDefData acctSchemaTable,
+			@NonNull final C_Currency_StepDefData currencyTable)
 	{
 		this.acctSchemaTable = acctSchemaTable;
+		this.currencyTable = currencyTable;
 	}
 
 	@And("load C_AcctSchema:")
@@ -54,6 +61,26 @@ public class C_AcctSchema_StepDef
 		for (final Map<String, String> row : tableRows)
 		{
 			loadAcctSchema(row);
+		}
+	}
+
+	@And("update C_AcctSchema:")
+	public void update_C_AcctSchema(@NonNull final DataTable dataTable)
+	{
+		final List<Map<String, String>> tableRows = dataTable.asMaps(String.class, String.class);
+		for (final Map<String, String> row : tableRows)
+		{
+			final String acctSchemaIdentifier = DataTableUtil.extractStringForColumnName(row, I_C_AcctSchema.COLUMNNAME_C_AcctSchema_ID + "." + TABLECOLUMN_IDENTIFIER);
+			final I_C_AcctSchema acctSchema = acctSchemaTable.get(acctSchemaIdentifier);
+
+			final String currencyIdentifier = DataTableUtil.extractStringOrNullForColumnName(row,"OPT." + I_C_AcctSchema.COLUMNNAME_C_Currency_ID + "." + TABLECOLUMN_IDENTIFIER);
+			if (Check.isNotBlank(currencyIdentifier))
+			{
+				final I_C_Currency currency = currencyTable.get(currencyIdentifier);
+				acctSchema.setC_Currency_ID(currency.getC_Currency_ID());
+			}
+
+			InterfaceWrapperHelper.saveRecord(acctSchema);
 		}
 	}
 

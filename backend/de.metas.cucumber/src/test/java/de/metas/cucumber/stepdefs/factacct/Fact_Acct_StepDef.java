@@ -12,6 +12,7 @@ import de.metas.cucumber.stepdefs.TableType;
 import de.metas.cucumber.stepdefs.invoice.C_Invoice_StepDefData;
 import de.metas.cucumber.stepdefs.matchinv.M_MatchInv_StepDefData;
 import de.metas.cucumber.stepdefs.sectioncode.M_SectionCode_StepDefData;
+import de.metas.cucumber.stepdefs.shipment.M_InOut_StepDefData;
 import de.metas.money.CurrencyId;
 import de.metas.util.Check;
 import de.metas.util.Services;
@@ -31,6 +32,7 @@ import org.compiere.model.I_AD_Table;
 import org.compiere.model.I_C_Currency;
 import org.compiere.model.I_C_Invoice;
 import org.compiere.model.I_Fact_Acct;
+import org.compiere.model.I_M_InOut;
 import org.compiere.model.I_M_MatchInv;
 import org.compiere.model.I_M_SectionCode;
 import org.compiere.util.Env;
@@ -60,6 +62,7 @@ public class Fact_Acct_StepDef
 	private final Fact_Acct_StepDefData factAcctTable;
 	private final C_ElementValue_StepDefData elementValueTable;
 	private final C_Currency_StepDefData currencyTable;
+	private final M_InOut_StepDefData inOutTable;
 
 	public Fact_Acct_StepDef(
 			@NonNull final M_SectionCode_StepDefData sectionCodeTable,
@@ -67,7 +70,8 @@ public class Fact_Acct_StepDef
 			@NonNull final M_MatchInv_StepDefData matchInvTable,
 			@NonNull final Fact_Acct_StepDefData factAcctTable,
 			@NonNull final C_ElementValue_StepDefData elementValueTable,
-			@NonNull final C_Currency_StepDefData currencyTable)
+			@NonNull final C_Currency_StepDefData currencyTable,
+			@NonNull final M_InOut_StepDefData inOutTable)
 	{
 		this.sectionCodeTable = sectionCodeTable;
 		this.invoiceTable = invoiceTable;
@@ -75,6 +79,7 @@ public class Fact_Acct_StepDef
 		this.factAcctTable = factAcctTable;
 		this.elementValueTable = elementValueTable;
 		this.currencyTable = currencyTable;
+		this.inOutTable = inOutTable;
 	}
 
 	@And("^after not more than (.*)s, Fact_Acct are found$")
@@ -84,15 +89,10 @@ public class Fact_Acct_StepDef
 		{
 			final List<I_Fact_Acct> factAcctRecords = StepDefUtil.tryAndWaitForItem(timeoutSec, 500, () -> load_Fact_Acct(row));
 
-			final String sectionCodeIdentifier = DataTableUtil.extractStringOrNullForColumnName(row, "OPT." + I_M_SectionCode.COLUMNNAME_M_SectionCode_ID + "." + TABLECOLUMN_IDENTIFIER);
-			if (Check.isNotBlank(sectionCodeIdentifier))
-			{
-				final I_M_SectionCode sectionCode = sectionCodeTable.get(sectionCodeIdentifier);
-				final boolean allFactAcctRecordsMatch = factAcctRecords.stream()
-						.allMatch(factAcct -> sectionCode.getM_SectionCode_ID() == factAcct.getM_SectionCode_ID());
+			final boolean allFactAcctRecordsMatch = factAcctRecords.stream()
+					.allMatch(factAcct -> validateFactAcct(factAcct, row));
 
-				assertThat(allFactAcctRecordsMatch).isTrue();
-			}
+			assertThat(allFactAcctRecordsMatch).isTrue();
 		}
 	}
 
@@ -154,6 +154,10 @@ public class Fact_Acct_StepDef
 			case I_C_Invoice.Table_Name:
 				final I_C_Invoice invoice = invoiceTable.get(recordIdentifier);
 				queryBuilder.addEqualsFilter(I_Fact_Acct.COLUMNNAME_Record_ID, invoice.getC_Invoice_ID());
+				break;
+			case I_M_InOut.Table_Name:
+				final I_M_InOut inOut = inOutTable.get(recordIdentifier);
+				queryBuilder.addEqualsFilter(I_Fact_Acct.COLUMNNAME_Record_ID, inOut.getM_InOut_ID());
 				break;
 			default:
 				throw new AdempiereException("Unhandled tableName")
@@ -313,6 +317,34 @@ public class Fact_Acct_StepDef
 						.setParameter("TableType", tableType)
 						.setParameter("Valid types", TableType.values());
 		}
+	}
+
+	private boolean validateFactAcct(
+			@NonNull final I_Fact_Acct factAcct,
+			@NonNull final Map<String, String> row)
+	{
+		final String sectionCodeIdentifier = DataTableUtil.extractStringOrNullForColumnName(row, "OPT." + I_M_SectionCode.COLUMNNAME_M_SectionCode_ID + "." + TABLECOLUMN_IDENTIFIER);
+		final BigDecimal currencyRate = DataTableUtil.extractBigDecimalOrNullForColumnName(row, "OPT." + I_Fact_Acct.COLUMNNAME_CurrencyRate);
+		// final BigDecimal amtAcct = DataTableUtil.extractBigDecimalOrNullForColumnName(row, "OPT." + I_Fact_Acct.COLUMN_AmtAcctCr
+
+		if (Check.isNotBlank(sectionCodeIdentifier))
+		{
+			final I_M_SectionCode sectionCode = sectionCodeTable.get(sectionCodeIdentifier);
+
+			if (sectionCode.getM_SectionCode_ID() != factAcct.getM_SectionCode_ID())
+			{
+				return false;
+			}
+		}
+
+		if (currencyRate != null)
+		{
+			if (!currencyRate.equals(factAcct.getCurrencyRate()))
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	@Value

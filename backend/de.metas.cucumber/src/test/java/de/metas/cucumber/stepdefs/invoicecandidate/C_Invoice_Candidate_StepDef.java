@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableSet;
 import de.metas.common.util.EmptyUtil;
 import de.metas.cucumber.stepdefs.C_BPartner_Location_StepDefData;
 import de.metas.cucumber.stepdefs.C_BPartner_StepDefData;
+import de.metas.cucumber.stepdefs.C_Currency_StepDefData;
 import de.metas.cucumber.stepdefs.C_OrderLine_StepDefData;
 import de.metas.cucumber.stepdefs.C_Order_StepDefData;
 import de.metas.cucumber.stepdefs.C_Tax_StepDefData;
@@ -37,9 +38,12 @@ import de.metas.cucumber.stepdefs.M_Product_StepDefData;
 import de.metas.cucumber.stepdefs.StepDefConstants;
 import de.metas.cucumber.stepdefs.StepDefUtil;
 import de.metas.cucumber.stepdefs.country.C_Country_StepDefData;
+import de.metas.cucumber.stepdefs.foreignexchangecontract.C_ForeignExchangeContract_StepDefData;
 import de.metas.cucumber.stepdefs.invoice.C_Invoice_StepDefData;
 import de.metas.cucumber.stepdefs.shipment.M_InOutLine_StepDefData;
 import de.metas.document.DocTypeId;
+import de.metas.forex.ForexContractId;
+import de.metas.forex.ForexContractRef;
 import de.metas.impex.api.IInputDataSourceDAO;
 import de.metas.impex.model.I_AD_InputDataSource;
 import de.metas.invoice.InvoiceId;
@@ -54,6 +58,7 @@ import de.metas.invoicecandidate.model.I_C_Invoice_Candidate;
 import de.metas.invoicecandidate.model.I_C_Invoice_Candidate_Recompute;
 import de.metas.invoicecandidate.process.params.InvoicingParams;
 import de.metas.logging.LogManager;
+import de.metas.money.CurrencyId;
 import de.metas.order.OrderLineId;
 import de.metas.process.PInstanceId;
 import de.metas.util.Check;
@@ -78,6 +83,7 @@ import org.compiere.model.I_C_BPartner;
 import org.compiere.model.I_C_BPartner_Location;
 import org.compiere.model.I_C_Country;
 import org.compiere.model.I_C_DocType;
+import org.compiere.model.I_C_ForeignExchangeContract;
 import org.compiere.model.I_C_Invoice;
 import org.compiere.model.I_C_Order;
 import org.compiere.model.I_C_OrderLine;
@@ -89,6 +95,7 @@ import org.compiere.util.Env;
 import org.compiere.util.Trx;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -148,7 +155,6 @@ public class C_Invoice_Candidate_StepDef
 	private final IInvoiceCandidateHandlerBL invoiceCandidateHandlerBL = Services.get(IInvoiceCandidateHandlerBL.class);
 	private final IQueryBL queryBL = Services.get(IQueryBL.class);
 	private final IInputDataSourceDAO inputDataSourceDAO = Services.get(IInputDataSourceDAO.class);
-
 	private final C_Invoice_Candidate_StepDefData invoiceCandTable;
 	private final C_Invoice_StepDefData invoiceTable;
 	private final C_BPartner_StepDefData bPartnerTable;
@@ -159,6 +165,8 @@ public class C_Invoice_Candidate_StepDef
 	private final C_Tax_StepDefData taxTable;
 	private final M_InOutLine_StepDefData inoutLineTable;
 	private final C_Country_StepDefData countryTable;
+	private final C_Currency_StepDefData currencyTable;
+	private final C_ForeignExchangeContract_StepDefData foreignExchangeContractTable;
 
 	public C_Invoice_Candidate_StepDef(
 			@NonNull final C_Invoice_Candidate_StepDefData invoiceCandTable,
@@ -170,7 +178,9 @@ public class C_Invoice_Candidate_StepDef
 			@NonNull final C_OrderLine_StepDefData orderLineTable,
 			@NonNull final C_Tax_StepDefData taxTable,
 			@NonNull final M_InOutLine_StepDefData inoutLineTable,
-			@NonNull final C_Country_StepDefData countryTable)
+			@NonNull final C_Country_StepDefData countryTable,
+			@NonNull final C_Currency_StepDefData currencyTable,
+			@NonNull final C_ForeignExchangeContract_StepDefData foreignExchangeContractTable)
 	{
 		this.invoiceCandTable = invoiceCandTable;
 		this.invoiceTable = invoiceTable;
@@ -182,6 +192,8 @@ public class C_Invoice_Candidate_StepDef
 		this.taxTable = taxTable;
 		this.inoutLineTable = inoutLineTable;
 		this.countryTable = countryTable;
+		this.currencyTable = currencyTable;
+		this.foreignExchangeContractTable = foreignExchangeContractTable;
 	}
 
 	@And("^locate invoice candidates for invoice: (.*)$")
@@ -729,10 +741,13 @@ public class C_Invoice_Candidate_StepDef
 
 			final PInstanceId invoiceCandidatesSelectionId = DB.createT_Selection(ImmutableList.of(invoiceCandidateId.getRepoId()), Trx.TRXNAME_None);
 
+			final ForexContractRef forexContractRef = getForeignExchangeContractRef(row);
+
 			final InvoicingParams invoicingParams = InvoicingParams.builder()
 					.ignoreInvoiceSchedule(false)
 					.updateLocationAndContactForInvoice(DataTableUtil.extractBooleanForColumnNameOr(row, "OPT.IsUpdateLocationAndContactForInvoice", false))
 					.completeInvoices(DataTableUtil.extractBooleanForColumnNameOr(row, "OPT." + InvoicingParams.PARA_IsCompleteInvoices, true))
+					.forexContractParameters(Optional.ofNullable(forexContractRef).map(ForexContractRef::toForexContractParameters).orElse(null))
 					.build();
 
 			StepDefUtil.tryAndWait(timeoutSec, 500, () -> checkNotMarkedAsToRecompute(invoiceCandidate));
@@ -751,8 +766,13 @@ public class C_Invoice_Candidate_StepDef
 				throw adempiereException;
 			}
 
-			//wait for the invoice to be created
-			StepDefUtil.tryAndWait(timeoutSec, 500, () -> isInvoiceCandidateProcessed(invoiceCandidate, row), () -> logCurrentContext(invoiceCandidate, row));
+			final Boolean waitForProcessedCandidate = DataTableUtil.extractBooleanForColumnNameOr(row, "OPT.WaitForProcessedCandidate",true);
+
+			if (waitForProcessedCandidate)
+			{
+				//wait for the invoice to be created
+				StepDefUtil.tryAndWait(timeoutSec, 500, () -> isInvoiceCandidateProcessed(invoiceCandidate, row), () -> logCurrentContext(invoiceCandidate, row));
+			}
 
 			DB.deleteT_Selection(invoiceCandidatesSelectionId, Trx.TRXNAME_None);
 		}
@@ -1301,5 +1321,37 @@ public class C_Invoice_Candidate_StepDef
 				.count() == 0;
 
 		StepDefUtil.tryAndWait(timeoutSec, 500, isInvoiceCandidateValidated);
+	}
+
+	@Nullable
+	private ForexContractRef getForeignExchangeContractRef(@NonNull final Map<String, String> row)
+	{
+		final String foreignExchangeContractIdentifier = DataTableUtil.extractStringOrNullForColumnName(row, "OPT." + I_C_ForeignExchangeContract.COLUMNNAME_C_ForeignExchangeContract_ID + "." + TABLECOLUMN_IDENTIFIER);
+		final String orderCurrencyIdentifier = DataTableUtil.extractStringOrNullForColumnName(row, "OPT." + I_C_Order.COLUMNNAME_C_Order_ID + "." + I_C_Order.COLUMNNAME_C_Currency_ID + "." + TABLECOLUMN_IDENTIFIER);
+		final String fromCurrencyIdentifier = DataTableUtil.extractStringOrNullForColumnName(row, "OPT." + I_C_ForeignExchangeContract.COLUMNNAME_C_Currency_ID + "." + TABLECOLUMN_IDENTIFIER);
+		final String toCurrencyIdentifier = DataTableUtil.extractStringOrNullForColumnName(row, "OPT." + I_C_ForeignExchangeContract.COLUMNNAME_To_Currency_ID + "." + TABLECOLUMN_IDENTIFIER);
+		final BigDecimal currencyRate = DataTableUtil.extractBigDecimalOrNullForColumnName(row, "OPT." + I_C_ForeignExchangeContract.COLUMNNAME_FEC_CurrencyRate);
+
+		if (Check.isBlank(orderCurrencyIdentifier) || Check.isBlank(fromCurrencyIdentifier)
+				|| Check.isBlank(toCurrencyIdentifier) || currencyRate == null)
+		{
+			return null;
+		}
+
+		final ForexContractId forexContractId = ForexContractId.ofRepoIdOrNull(Optional.ofNullable(foreignExchangeContractIdentifier)
+																					   .map(foreignExchangeContractTable::get)
+																					   .map(I_C_ForeignExchangeContract::getC_ForeignExchangeContract_ID)
+																					   .orElse(null));
+		final CurrencyId orderCurrencyId = CurrencyId.ofRepoId(currencyTable.get(orderCurrencyIdentifier).getC_Currency_ID());
+		final CurrencyId fromCurrencyId = CurrencyId.ofRepoId(currencyTable.get(fromCurrencyIdentifier).getC_Currency_ID());
+		final CurrencyId toCurrencyId = CurrencyId.ofRepoId(currencyTable.get(toCurrencyIdentifier).getC_Currency_ID());
+
+		return ForexContractRef.builder()
+				.forexContractId(forexContractId)
+				.orderCurrencyId(orderCurrencyId)
+				.fromCurrencyId(fromCurrencyId)
+				.toCurrencyId(toCurrencyId)
+				.currencyRate(currencyRate)
+				.build();
 	}
 }

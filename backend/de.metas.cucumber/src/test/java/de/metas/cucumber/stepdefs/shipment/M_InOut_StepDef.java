@@ -29,6 +29,7 @@ import de.metas.cucumber.stepdefs.C_BPartner_StepDefData;
 import de.metas.cucumber.stepdefs.C_OrderLine_StepDefData;
 import de.metas.cucumber.stepdefs.C_Order_StepDefData;
 import de.metas.cucumber.stepdefs.DataTableUtil;
+import de.metas.cucumber.stepdefs.M_ReceiptSchedule_StepDefData;
 import de.metas.cucumber.stepdefs.StepDefConstants;
 import de.metas.cucumber.stepdefs.StepDefDocAction;
 import de.metas.cucumber.stepdefs.StepDefUtil;
@@ -48,6 +49,8 @@ import de.metas.inout.InOutLineId;
 import de.metas.inout.ShipmentScheduleId;
 import de.metas.inout.model.I_M_InOutLine;
 import de.metas.inoutcandidate.api.IShipmentScheduleAllocDAO;
+import de.metas.inoutcandidate.model.I_M_ReceiptSchedule;
+import de.metas.inoutcandidate.model.I_M_ReceiptSchedule_Alloc;
 import de.metas.inoutcandidate.model.I_M_ShipmentSchedule;
 import de.metas.inoutcandidate.model.I_M_ShipmentSchedule_QtyPicked;
 import de.metas.process.IADPInstanceDAO;
@@ -101,6 +104,7 @@ public class M_InOut_StepDef
 	private final C_OrderLine_StepDefData orderLineTable;
 	private final M_Warehouse_StepDefData warehouseTable;
 	private final M_SectionCode_StepDefData sectionCodeTable;
+	private final M_ReceiptSchedule_StepDefData receiptScheduleTable;
 
 	private final IInOutDAO inOutDAO = Services.get(IInOutDAO.class);
 	private final IShipmentScheduleAllocDAO shipmentScheduleAllocDAO = Services.get(IShipmentScheduleAllocDAO.class);
@@ -120,7 +124,8 @@ public class M_InOut_StepDef
 			@NonNull final C_Order_StepDefData orderTable,
 			@NonNull final C_OrderLine_StepDefData orderLineTable,
 			@NonNull final M_Warehouse_StepDefData warehouseTable,
-			@NonNull final M_SectionCode_StepDefData sectionCodeTable)
+			@NonNull final M_SectionCode_StepDefData sectionCodeTable,
+			@NonNull final M_ReceiptSchedule_StepDefData receiptScheduleTable)
 	{
 		this.shipmentTable = shipmentTable;
 		this.shipmentLineTable = shipmentLineTable;
@@ -131,6 +136,7 @@ public class M_InOut_StepDef
 		this.orderLineTable = orderLineTable;
 		this.warehouseTable = warehouseTable;
 		this.sectionCodeTable = sectionCodeTable;
+		this.receiptScheduleTable = receiptScheduleTable;
 	}
 
 	@And("^validate the created (shipments|material receipt)$")
@@ -309,7 +315,74 @@ public class M_InOut_StepDef
 		StepDefUtil.tryAndWait(timeoutSec, 500, isShipmentCreated);
 	}
 
-	@And("^the (shipment|material receipt) identified by (.*) is (completed) and the following exception is thrown: (.*)")
+	@And("^after not more than (.*)s, M_InOut is found for material receipt:$")
+	public void receiptIsFound(final int timeoutSec, @NonNull final DataTable dataTable) throws InterruptedException
+	{
+		final Map<String, String> tableRow = dataTable.asMaps().get(0);
+
+		final String receiptScheduleIdentifier = DataTableUtil.extractStringForColumnName(tableRow, I_M_ReceiptSchedule.COLUMNNAME_M_ReceiptSchedule_ID + "." + TABLECOLUMN_IDENTIFIER);
+		final String receiptIdentifier = DataTableUtil.extractStringForColumnName(tableRow, COLUMNNAME_M_InOut_ID + "." + TABLECOLUMN_IDENTIFIER);
+		final I_M_ReceiptSchedule receiptSchedule = receiptScheduleTable.get(receiptScheduleIdentifier);
+
+		final Supplier<Boolean> isReceiptCreated = () -> {
+
+			final List<I_M_ReceiptSchedule_Alloc> receiptAllocRecords = queryBL
+					.createQueryBuilder(I_M_ReceiptSchedule_Alloc.class)
+					.addOnlyActiveRecordsFilter()
+					.addEqualsFilter(I_M_ReceiptSchedule_Alloc.COLUMNNAME_M_ReceiptSchedule_ID, receiptSchedule.getM_ReceiptSchedule_ID())
+					.addNotNull(I_M_ReceiptSchedule_Alloc.COLUMNNAME_M_InOutLine_ID)
+					.create()
+					.list(I_M_ReceiptSchedule_Alloc.class);
+
+			if (receiptAllocRecords.isEmpty())
+			{
+				return false;
+			}
+
+			final Set<InOutLineId> receiptLineIds = receiptAllocRecords.stream()
+					.map(I_M_ReceiptSchedule_Alloc::getM_InOutLine_ID)
+					.map(InOutLineId::ofRepoId)
+					.collect(ImmutableSet.toImmutableSet());
+
+			final Set<InOutId> inOutIds = queryBL
+					.createQueryBuilder(I_M_InOutLine.class)
+					.addOnlyActiveRecordsFilter()
+					.addInArrayFilter(I_M_InOutLine.COLUMNNAME_M_InOutLine_ID, receiptLineIds)
+					.create()
+					.stream()
+					.map(I_M_InOutLine::getM_InOut_ID)
+					.map(InOutId::ofRepoId)
+					.collect(Collectors.toSet());
+
+			if (inOutIds.size() > 1)
+			{
+				throw new AdempiereException("More than one M_InOut found for receiptSchedule=" + receiptSchedule.getM_ReceiptSchedule_ID());
+			}
+
+			final IQueryBuilder<I_M_InOut> shipmentQueryBuilder = queryBL
+					.createQueryBuilder(I_M_InOut.class)
+					.addOnlyActiveRecordsFilter();
+
+			final I_M_InOut shipment = shipmentQueryBuilder
+					.addEqualsFilter(I_M_InOut.COLUMNNAME_M_InOut_ID, inOutIds.iterator().next().getRepoId())
+					.create()
+					.firstOnly(I_M_InOut.class);
+
+			if (shipment != null)
+			{
+				shipmentTable.put(receiptIdentifier, shipment);
+				return true;
+			}
+
+			return false;
+		};
+
+		StepDefUtil.tryAndWait(timeoutSec, 500, isReceiptCreated);
+
+
+	}
+
+		@And("^the (shipment|material receipt) identified by (.*) is (completed) and the following exception is thrown: (.*)")
 	public void complete_inOut_expect_exception(
 			@NonNull final String model_UNUSED,
 			@NonNull final String shipmentIdentifier,

@@ -2,6 +2,7 @@ package de.metas.forex;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import de.metas.currency.FixedConversionRate;
+import de.metas.forex.process.utils.ForexContractParameters;
 import de.metas.money.CurrencyId;
 import lombok.Builder;
 import lombok.NonNull;
@@ -53,6 +54,17 @@ public class ForexContractRef
 				.fromCurrencyId(fromCurrencyId)
 				.toCurrencyId(toCurrencyId)
 				.multiplyRate(currencyRate)
+				.build();
+	}
+
+	public ForexContractParameters toForexContractParameters()
+	{
+		return ForexContractParameters.builder()
+				.forexContractId(forexContractId)
+				.orderCurrencyId(orderCurrencyId)
+				.fromCurrencyId(fromCurrencyId)
+				.toCurrencyId(toCurrencyId)
+				.currencyRate(currencyRate)
 				.build();
 	}
 

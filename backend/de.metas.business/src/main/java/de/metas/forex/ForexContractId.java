@@ -20,6 +20,12 @@ public class ForexContractId implements RepoIdAware
 
 	public static ForexContractId ofRepoIdOrNull(final int repoId) {return repoId > 0 ? new ForexContractId(repoId) : null;}
 
+	@Nullable
+	public static ForexContractId ofRepoIdOrNull(@Nullable final Integer repoId)
+	{
+		return repoId != null && repoId > 0 ? ofRepoId(repoId) : null;
+	}
+
 	int repoId;
 
 	private ForexContractId(final int repoId) {this.repoId = Check.assumeGreaterThanZero(repoId, I_C_ForeignExchangeContract.COLUMNNAME_C_ForeignExchangeContract_ID);}

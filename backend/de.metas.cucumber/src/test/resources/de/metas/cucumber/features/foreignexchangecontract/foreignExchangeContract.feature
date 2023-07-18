@@ -1,3 +1,4 @@
+@Id:S0292
 @from:cucumber
 Feature: foreign exchange contract
 
@@ -57,6 +58,7 @@ Feature: foreign exchange contract
       | foreignExchangeContract_07132023        | eur                      | chf                       | 2                | 10         | 0                | 10              | 2023-07-15       | 2023-07-14       |
     And the foreign exchange contract identified by foreignExchangeContract_07132023 is completed
 
+  @Id:S0292_100
   @from:cucumber
   Scenario: foreign exchange contract with sales order
     And metasfresh contains C_Orders:
@@ -97,6 +99,7 @@ Feature: foreign exchange contract
       | TableName | Record_ID.Identifier | OPT.CurrencyRate |
       | C_Invoice | invoice_1            | 2                |
 
+  @Id:S0292_200
   @from:cucumber
   Scenario: foreign exchange contract with purchase order
     And metasfresh contains C_Orders:

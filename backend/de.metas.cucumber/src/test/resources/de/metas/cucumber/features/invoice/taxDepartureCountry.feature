@@ -1,3 +1,4 @@
+@Id:S0287
 @from:cucumber
 Feature: tax departure country for SO and PO
 
@@ -55,6 +56,7 @@ Feature: tax departure country for SO and PO
       | l_1        | 2906202289012 | endcustomer_1            | Y                   | Y                   |
       | l_2        | 2906202289011 | endvendor_1              | Y                   | Y                   |
 
+  @Id:S0287_100
   @from:cucumber
   Scenario: tax departure country is propagated from sales order to sales invoice
     And metasfresh contains C_Orders:
@@ -86,6 +88,7 @@ Feature: tax departure country for SO and PO
       | C_Invoice_ID.Identifier | C_BPartner_ID.Identifier | C_BPartner_Location_ID.Identifier | paymentTerm | processed | docStatus | OPT.C_Tax_Departure_Country_ID.Identifier |
       | invoice_1               | endcustomer_1            | l_1                               | 1000002     | true      | CO        | Romania                                   |
 
+  @Id:S0287_200
   @from:cucumber
   Scenario: tax departure country is propagated from purchase order to purchase invoice
     And metasfresh contains C_Orders:
@@ -120,6 +123,7 @@ Feature: tax departure country for SO and PO
       | C_Invoice_ID.Identifier | C_BPartner_ID.Identifier | C_BPartner_Location_ID.Identifier | paymentTerm | processed | docStatus | OPT.C_Tax_Departure_Country_ID.Identifier |
       | invoice_1               | endvendor_1              | l_2                               | 1000002     | true      | CO        | Romania                                   |
 
+  @Id:S0287_300
   @from:cucumber
   Scenario: Different tax departure country in invoice candidates will always result in multiple invoices
     And metasfresh contains C_Orders:
@@ -165,6 +169,7 @@ Feature: tax departure country for SO and PO
       | invoice_1               | endcustomer_1            | l_1                               | 1000002     | true      | CO        | Romania                                   |
       | invoice_2               | endcustomer_1            | l_1                               | 1000002     | true      | CO        | Albania                                   |
 
+  @Id:S0287_400
   @from:cucumber
   Scenario: after generating PO from SO, the tax departure country is not propagated from sales order to purchase order
     And metasfresh contains C_BPartner_Products:

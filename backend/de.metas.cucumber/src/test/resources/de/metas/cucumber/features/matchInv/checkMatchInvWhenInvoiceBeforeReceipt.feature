@@ -1,3 +1,4 @@
+@Id:S0293
 @from:cucumber
 Feature: match inv is created when in transit
 
@@ -6,6 +7,7 @@ Feature: match inv is created when in transit
     And the existing user with login 'metasfresh' receives a random a API token for the existing role with name 'WebUI'
     And set sys config boolean value true for sys config SKIP_WP_PROCESSOR_FOR_AUTOMATION
 
+  @Id:S0293_100
   @from:cucumber
   Scenario: match inv is created when invoice generated before receipt (in transit)
     And load M_Warehouse:

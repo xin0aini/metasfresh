@@ -1125,12 +1125,6 @@ public class DocumentEntityDescriptor
 			return _printProcessId;
 		}
 
-		public Builder setCloneEnabled(final boolean cloneEnabled)
-		{
-			_cloneEnabled = cloneEnabled;
-			return this;
-		}
-
 		private boolean isCloneEnabled()
 		{
 			return isCloneEnabled(_tableName);

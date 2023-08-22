@@ -3,7 +3,7 @@ package de.metas.order.copy;
 import de.metas.adempiere.model.I_C_Order;
 import de.metas.copy_with_details.GeneralCopyRecordSupport;
 import de.metas.copy_with_details.template.CopyTemplate;
-import de.metas.document.dimension.DimensionService;
+import de.metas.document.dimension.OrderLineDimensionFactory;
 import de.metas.order.OrderFreightCostsService;
 import de.metas.order.OrderLineId;
 import de.metas.util.Check;
@@ -25,7 +25,7 @@ public class C_OrderLine_CopyRecordSupport extends GeneralCopyRecordSupport
 
 	private static final String DYNATTR_OrderCompensationGroupIdsMap = "OrderCompensationGroupIdsMap";
 
-	private final DimensionService dimensionService = SpringContextHolder.instance.getBean(DimensionService.class);
+	private final OrderLineDimensionFactory orderLineDimensionFactory = SpringContextHolder.instance.getBean(OrderLineDimensionFactory.class);
 
 	/**
 	 * @return true if the record shall be copied
@@ -44,7 +44,6 @@ public class C_OrderLine_CopyRecordSupport extends GeneralCopyRecordSupport
 	{
 		final I_C_OrderLine toOrderLine = InterfaceWrapperHelper.create(to, I_C_OrderLine.class);
 		final I_C_OrderLine fromOrderLine = InterfaceWrapperHelper.create(from, I_C_OrderLine.class);
-
 		onOrderLineCopied(toOrderLine, fromOrderLine);
 	}
 
@@ -80,7 +79,7 @@ public class C_OrderLine_CopyRecordSupport extends GeneralCopyRecordSupport
 			return -1;
 		}
 
-		final I_C_Order toOrder = getParentModel(I_C_Order.class);
+		final I_C_Order toOrder = getTargetOrder();
 		Map<Integer, Integer> orderCompensationGroupIdsMap = InterfaceWrapperHelper.getDynAttribute(toOrder, DYNATTR_OrderCompensationGroupIdsMap);
 		if (orderCompensationGroupIdsMap == null)
 		{

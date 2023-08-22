@@ -32,7 +32,7 @@ public final class POInfoColumn implements Serializable
 	 */
 	private static final long serialVersionUID = 1667303121090497293L;
 
-	private static final transient Logger logger = LogManager.getLogger(POInfoColumn.class);
+	private static final Logger logger = LogManager.getLogger(POInfoColumn.class);
 
 	public POInfoColumn(
 			final int ad_Column_ID,
@@ -60,7 +60,7 @@ public final class POInfoColumn implements Serializable
 	{
 		AD_Column_ID = ad_Column_ID;
 		ColumnName = columnName;
-		TableName = tableName;
+		this.tableName = tableName;
 		this.virtualColumn = !Check.isEmpty(columnSQL, false); // trimWhitespaces=false to preserve back compatibility
 		if (virtualColumn)
 		{
@@ -75,22 +75,22 @@ public final class POInfoColumn implements Serializable
 
 		if (isString(tableName, columnName, displayTypeParam, ad_Reference_Value_ID))
 		{
-			this.DisplayType = org.compiere.util.DisplayType.String;
+			this.displayType = org.compiere.util.DisplayType.String;
 			this.ColumnClass = String.class;
 		}
 		else if (columnName.equals("Posted") || columnName.equals("Processed") || columnName.equals("Processing"))
 		{
-			this.DisplayType = displayTypeParam;
+			this.displayType = displayTypeParam;
 			this.ColumnClass = Boolean.class;
 		}
 		else if (Services.get(IColumnBL.class).isRecordIdColumnName(columnName))
 		{
-			this.DisplayType = org.compiere.util.DisplayType.ID;
+			this.displayType = org.compiere.util.DisplayType.ID;
 			this.ColumnClass = Integer.class;
 		}
 		else
 		{
-			this.DisplayType = displayTypeParam;
+			this.displayType = displayTypeParam;
 			this.ColumnClass = org.compiere.util.DisplayType.getClass(displayTypeParam, true);
 		}
 
@@ -116,8 +116,6 @@ public final class POInfoColumn implements Serializable
 		IsAllowLogging = isAllowLogging;
 		IsRestAPICustomColumn = isRestAPICustomColumn;
 		this.cloningStrategy = cloningStrategy;
-
-		this._referencedTableName = computeReferencedTableName(this.displayType, AD_Reference_Value_TableName);
 	}   // Column
 
 	private static boolean isString(
@@ -179,7 +177,7 @@ public final class POInfoColumn implements Serializable
 	 */
 	private final String ColumnName;
 
-	private final String TableName;
+	private final String tableName;
 
 	/**
 	 * Virtual Column SQL
@@ -196,7 +194,7 @@ public final class POInfoColumn implements Serializable
 	/**
 	 * Display Type
 	 */
-	final int DisplayType;
+	@Getter private final int displayType;
 	/**
 	 * Data Type
 	 */
@@ -298,7 +296,7 @@ public final class POInfoColumn implements Serializable
 		return "POInfo.Column["
 				+ ColumnName
 				+ ",ID=" + AD_Column_ID
-				+ ",DisplayType=" + DisplayType
+				+ ",DisplayType=" + displayType
 				+ ",ColumnClass=" + ColumnClass
 				+ "]";
 	}    // toString
@@ -353,11 +351,6 @@ public final class POInfoColumn implements Serializable
 		return sqlColumnForSelect;
 	}
 
-	public int getDisplayType()
-	{
-		return DisplayType;
-	}
-
 	public int getAD_Reference_Value_ID()
 	{
 		return AD_Reference_Value_ID;
@@ -395,7 +388,7 @@ public final class POInfoColumn implements Serializable
 
 	public boolean isLookup()
 	{
-		return org.compiere.util.DisplayType.isLookup(DisplayType);
+		return org.compiere.util.DisplayType.isLookup(displayType);
 	}
 
 	public boolean isRestAPICustomColumn()
@@ -418,7 +411,7 @@ public final class POInfoColumn implements Serializable
 	private Optional<String> computeReferencedTableName()
 	{
 		// Special lookups (Location, Locator etc)
-		final String refTableName = org.compiere.util.DisplayType.getTableName(DisplayType);
+		final String refTableName = org.compiere.util.DisplayType.getTableName(displayType);
 		if (refTableName != null)
 		{
 			return Optional.of(refTableName);
@@ -447,8 +440,8 @@ public final class POInfoColumn implements Serializable
 				{
 					final MLookupInfo lookupInfoCached = MLookupFactory.getLookupInfo(
 							Env.WINDOW_None
-							, DisplayType
-							, TableName
+							, displayType
+							, tableName
 							, ColumnName
 							, AD_Reference_Value_ID
 							, IsParent
@@ -460,8 +453,8 @@ public final class POInfoColumn implements Serializable
 
 			return MLookupFactory.getLookupInfo(
 					windowNo
-					, DisplayType
-					, TableName
+					, displayType
+					, tableName
 					, ColumnName
 					, AD_Reference_Value_ID
 					, IsParent
@@ -504,6 +497,6 @@ public final class POInfoColumn implements Serializable
 
 	public boolean isPasswordColumn()
 	{
-		return org.compiere.util.DisplayType.isPassword(ColumnName, DisplayType);
+		return org.compiere.util.DisplayType.isPassword(ColumnName, displayType);
 	}
 }    // POInfoColumn

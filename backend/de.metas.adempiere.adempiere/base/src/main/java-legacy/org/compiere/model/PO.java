@@ -21,7 +21,6 @@ import de.metas.cache.model.CacheInvalidateMultiRequest;
 import de.metas.cache.model.IModelCacheInvalidationService;
 import de.metas.cache.model.ModelCacheInvalidationTiming;
 import de.metas.cache.model.POCacheSourceModel;
-import de.metas.cache.model.impl.ModelCacheInvalidationService;
 import de.metas.document.sequence.IDocumentNoBL;
 import de.metas.document.sequence.IDocumentNoBuilder;
 import de.metas.document.sequence.IDocumentNoBuilderFactory;
@@ -115,10 +114,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Supplier;
 
 /**
  * Persistent Object.
@@ -1102,7 +1103,7 @@ public abstract class PO
 				}
 			}
 			// Validate reference list [1762461]
-			if (p_info.getColumn(index).DisplayType == DisplayType.List &&
+			if (p_info.getColumn(index).getDisplayType() == DisplayType.List &&
 					p_info.getColumn(index).AD_Reference_Value_ID > 0 &&
 					valueToUse instanceof String)
 			{
@@ -2695,22 +2696,6 @@ public abstract class PO
 		// Call ModelValidators TYPE_NEW/TYPE_CHANGE
 		fireModelChange(newRecord ? ModelChangeType.BEFORE_NEW : ModelChangeType.BEFORE_CHANGE);
 
-		//
-		// Create cache invalidation request
-		if (p_info.isSingleKeyColumnName())
-		{
-			try
-			{
-				final ModelCacheInvalidationService cacheInvalidationService = services.cacheInvalidationService();
-				final ModelCacheInvalidationTiming cacheInvalidationTiming = newRecord ? ModelCacheInvalidationTiming.BEFORE_NEW : ModelCacheInvalidationTiming.BEFORE_CHANGE;
-				cacheInvalidationService.invalidateForModel(CacheSourceModelFactory.ofPO(this), cacheInvalidationTiming);
-			}
-			catch (final Exception ex)
-			{
-				log.warn("Cache invalidation on before new/change failed for {}. Ignored.", this, ex);
-			}
-		}
-
 		// Save
 		if (newRecord)
 		{
@@ -2786,15 +2771,6 @@ public abstract class PO
 			fireModelChange(newRecord ? (replication ? ModelChangeType.AFTER_NEW_REPLICATION : ModelChangeType.AFTER_NEW)
 					: (replication ? ModelChangeType.AFTER_CHANGE_REPLICATION : ModelChangeType.AFTER_CHANGE));
 		}
-
-		//
-		// Create cache invalidation request
-		// (we have to do it here, before we reset all fields)
-		final ModelCacheInvalidationService cacheInvalidationService = services.cacheInvalidationService();
-		final ModelCacheInvalidationTiming cacheInvalidationTiming = newRecord ? ModelCacheInvalidationTiming.AFTER_NEW : ModelCacheInvalidationTiming.AFTER_CHANGE;
-		final CacheInvalidateMultiRequest cacheInvalidateRequest = p_info.isSingleKeyColumnName()
-				? cacheInvalidationService.createRequestOrNull(CacheSourceModelFactory.ofPO(this), cacheInvalidationTiming)
-				: null;
 
 		final int columnsCount = p_info.getColumnCount();
 
@@ -3874,14 +3850,6 @@ public abstract class PO
 
 		// Delete Cascade AD_Table_ID/Record_ID (Attachments, ..)
 		PO_Record.deleteCascade(AD_Table_ID, Record_ID, trxName);
-
-		//
-		// Create cache invalidation request
-		// We have to do it here, before we actually delete in case we have to compute what rows are "disappearing" from a view because this record was deleted.
-		final ModelCacheInvalidationService cacheInvalidationService = services.cacheInvalidationService();
-		final CacheInvalidateMultiRequest cacheInvalidateRequest = p_info.isSingleKeyColumnName()
-				? cacheInvalidationService.createRequestOrNull(CacheSourceModelFactory.ofPO(this), ModelCacheInvalidationTiming.AFTER_DELETE)
-				: null;
 
 		//
 		// Execute SQL DELETE

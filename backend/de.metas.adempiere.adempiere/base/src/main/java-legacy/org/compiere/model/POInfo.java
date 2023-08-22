@@ -92,6 +92,17 @@ public final class POInfo implements Serializable, ColumnDisplayTypeProvider
 		return getPOInfoMap().getByTableNameOrNull(tableName);
 	}
 
+	@NonNull
+	public static POInfo getPOInfoNotNull(@NonNull final String tableName)
+	{
+		final POInfo poInfo = getPOInfoMap().getByTableNameOrNull(tableName);
+		if (poInfo == null)
+		{
+			throw new AdempiereException("No POInfo found for " + tableName);
+		}
+		return poInfo;
+	}
+
 	public static Optional<POInfo> getPOInfoIfPresent(@NonNull final String tableName)
 	{
 		return Optional.ofNullable(getPOInfoMap().getByTableNameOrNull(tableName));
@@ -162,7 +173,6 @@ public final class POInfo implements Serializable, ColumnDisplayTypeProvider
 	private final boolean m_IsChangeLog;
 
 	private final boolean m_HasStaleableColumns;
-	@Getter private final int webuiViewPageLength;
 	@Getter private final TableCloningEnabled cloningEnabled;
 	@Getter private final TableWhenChildCloningStrategy whenChildCloningStrategy;
 	@Getter private final TableDownlineCloningStrategy downlineCloningStrategy;
@@ -207,9 +217,6 @@ public final class POInfo implements Serializable, ColumnDisplayTypeProvider
 				+ ",c." + I_AD_Column.COLUMNNAME_IsSelectionColumn                // 29 // metas
 				+ ",t." + I_AD_Table.COLUMNNAME_IsView                            // 30 // metas
 				+ ",c." + I_AD_Column.COLUMNNAME_IsRestAPICustomColumn              // 31
-				+ ", rt_table.TableName AS AD_Reference_Value_TableName"
-				+ ", rt_keyColumn.AD_Reference_ID AS AD_Reference_Value_KeyColumn_DisplayType"
-				+ ", t." + I_AD_Table.COLUMNNAME_WEBUI_View_PageLength
 				+ ", t." + I_AD_Table.COLUMNNAME_CloningEnabled
 				+ ", t." + I_AD_Table.COLUMNNAME_DownlineCloningStrategy
 				+ ", t." + I_AD_Table.COLUMNNAME_WhenChildCloningStrategy
@@ -303,7 +310,6 @@ public final class POInfo implements Serializable, ColumnDisplayTypeProvider
 		this.m_IsChangeLog = header.isChangeLog();
 		this.m_columns = ImmutableList.copyOf(columns);
 		this.m_HasStaleableColumns = hasStaleableColumns;
-		this.webuiViewPageLength = header.getWebuiViewPageLength();
 		this.cloningEnabled = header.getCloningEnabled();
 		this.whenChildCloningStrategy = header.getWhenChildCloningStrategy();
 		this.downlineCloningStrategy = header.getDownlineCloningStrategy();
@@ -392,7 +398,6 @@ public final class POInfo implements Serializable, ColumnDisplayTypeProvider
 				.accessLevel(TableAccessLevel.forAccessLevel(rs.getString(I_AD_Table.COLUMNNAME_AccessLevel)))
 				.isView(StringUtils.toBoolean(rs.getString(I_AD_Table.COLUMNNAME_IsView)))
 				.isChangeLog(StringUtils.toBoolean(rs.getString(I_AD_Table.COLUMNNAME_IsChangeLog)))
-				.webuiViewPageLength(Math.max(rs.getInt(I_AD_Table.COLUMNNAME_WEBUI_View_PageLength), 0))
 				.cloningEnabled(TableCloningEnabled.ofCode(rs.getString(I_AD_Table.COLUMNNAME_CloningEnabled)))
 				.whenChildCloningStrategy(TableWhenChildCloningStrategy.ofCode(rs.getString(I_AD_Table.COLUMNNAME_WhenChildCloningStrategy)))
 				.downlineCloningStrategy(TableDownlineCloningStrategy.ofCode(rs.getString(I_AD_Table.COLUMNNAME_DownlineCloningStrategy)))
@@ -848,7 +853,7 @@ public final class POInfo implements Serializable, ColumnDisplayTypeProvider
 		{
 			return DisplayType.String;
 		}
-		return m_columns.get(index).DisplayType;
+		return m_columns.get(index).getDisplayType();
 	}   // getColumnDisplayType
 
 	@Override
@@ -1435,7 +1440,6 @@ public final class POInfo implements Serializable, ColumnDisplayTypeProvider
 		@NonNull TableAccessLevel accessLevel;
 		boolean isView;
 		boolean isChangeLog;
-		int webuiViewPageLength;
 		@NonNull TableCloningEnabled cloningEnabled;
 		@NonNull TableWhenChildCloningStrategy whenChildCloningStrategy;
 		@NonNull TableDownlineCloningStrategy downlineCloningStrategy;

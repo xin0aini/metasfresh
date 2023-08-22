@@ -1,5 +1,6 @@
 package org.compiere.model;
 
+import org.adempiere.model.ModelColumn;
 
 /** Generated Interface for AD_Table
  *  @author Adempiere (generated)

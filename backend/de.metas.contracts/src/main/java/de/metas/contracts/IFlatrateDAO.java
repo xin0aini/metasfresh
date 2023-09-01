@@ -163,6 +163,10 @@ public interface IFlatrateDAO extends ISingletonService
 
 	I_C_Flatrate_Term retrieveFirstFlatrateTerm(@NonNull I_C_Invoice invoice);
 
+	@NonNull
+	I_C_Flatrate_Data retrieveFlatrateData(@NonNull final I_C_Flatrate_Term flatrateTerm);
+
+
 	@Value
 	@Builder
 	class TermsQuery

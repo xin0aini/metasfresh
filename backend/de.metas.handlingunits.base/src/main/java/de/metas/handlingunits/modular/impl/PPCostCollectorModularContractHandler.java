@@ -26,6 +26,7 @@ import com.google.common.collect.ImmutableList;
 import de.metas.bpartner.BPartnerId;
 import de.metas.contracts.FlatrateTermId;
 import de.metas.contracts.IFlatrateDAO;
+import de.metas.contracts.model.I_C_Flatrate_Data;
 import de.metas.contracts.model.I_C_Flatrate_Term;
 import de.metas.contracts.modular.IModularContractTypeHandler;
 import de.metas.contracts.modular.ModularContractService;
@@ -131,6 +132,8 @@ public class PPCostCollectorModularContractHandler implements IModularContractTy
 		}
 
 		final I_C_Flatrate_Term modularContractRecord = flatrateDAO.getById(modularContractId);
+		final I_C_Flatrate_Data flatrateDataRecord = flatrateDAO.retrieveFlatrateData(modularContractRecord);
+
 		final I_PP_Order ppOrderRecord = ppOrderBL.getById(PPOrderId.ofRepoId(ppCostCollector.getPP_Order_ID()));
 
 		final I_C_UOM uom = uomDAO.getById(UomId.ofRepoId(ppCostCollector.getC_UOM_ID()));
@@ -169,6 +172,7 @@ public class PPCostCollectorModularContractHandler implements IModularContractTy
 				.year(modularContractSettings.getYearAndCalendarId().yearId())
 				.description(description)
 				.modularContractTypeId(contractTypeId)
+				.collectionPointBPartnerId(BPartnerId.ofRepoId(flatrateDataRecord.getC_BPartner_ID()))
 				.build());
 	}
 

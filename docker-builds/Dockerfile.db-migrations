@@ -15,4 +15,5 @@ COPY docker-builds/metadata/build-info.properties .
 COPY --from=backend /backend/metasfresh-dist/dist/target/dist/install/lib .
 COPY --from=backend /backend/metasfresh-dist/dist/target/dist/sql sql/
 
+# this image expects database settings mounted to /migrations/settings.properties to properly run
 CMD ["java", "-jar", "de.metas.migration.cli.jar", "-d", ".", "-s", "settings.properties"]

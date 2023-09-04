@@ -29,7 +29,7 @@ ENV PGDATA /var/lib/postgresql/customdata
 # grabed from official postgres image: this 777 will be replaced by 700 at runtime (allows semi-arbitrary "--user" values)
 RUN mkdir -p "$PGDATA" && chown -R postgres:postgres "$PGDATA" && chmod 777 "$PGDATA"
 
-COPY docker-builds/db/init-preloaded/custom-entrypoint.sh /usr/local/bin/
+COPY --chmod=700 docker-builds/db/init-preloaded/custom-entrypoint.sh /usr/local/bin/
 ENTRYPOINT ["custom-entrypoint.sh"]
 
 COPY --from=init /var/lib/postgresql/data /var/lib/postgresql/initdata
